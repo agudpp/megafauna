@@ -1,0 +1,106 @@
+/*
+ * AABB.h
+ *
+ *  Created on: 21/02/2012
+ *      Author: agustin
+ *
+ */
+
+#ifndef AABB_H_
+#define AABB_H_
+
+#include "Vec2.h"
+
+
+namespace core {
+
+// This class represents an Axis Aligned Bounding Box and using the normal
+// coordinates system, where x grows positive to right and y grows positive for
+// top, so top is higher than bottom and left is lesser than right
+//
+
+// Aligned box2D
+struct AABB
+{
+    Vector2 tl;
+    Vector2 br;
+
+    AABB()
+    {
+    }
+    AABB(const Vector2 &topLeft, const Vector2 &bottomRight) :
+        tl(topLeft)
+    ,   br(bottomRight)
+    {
+    }
+
+    // check if a point is inside of the box
+    inline bool
+    checkPointInside(const Vector2 &p) const
+    {
+        return p.x >= tl.x && p.x <= br.x && p.y >= br.y && p.y <= tl.y;
+    }
+
+    // translate the bounding box
+    inline void
+    translate(const Vector2 &v)
+    {
+        tl += v;
+        br += v;
+    }
+
+    // Change the size maintaining the top left position
+    inline void
+    setSize(const float x, const float y)
+    {
+        br.x = tl.x + x;
+        tl.y = br.y + y;
+    }
+
+    inline float
+    getHeight(void) const
+    {
+        return tl.y - br.y;
+    }
+
+    inline float
+    getWidth(void) const
+    {
+        return br.x - tl.x;
+    }
+
+    // set the position of the AABB taking into account the top left vertex
+    inline void
+    setPosition(const Vector2 &v)
+    {
+        translate(tl - v);
+    }
+
+    // set the position taking into account the center of the bounding box
+    inline void
+    setCenterPosition(const Vector2 &p)
+    {
+        // get half size
+        const float halfX = (br.x - tl.x) * 0.5f;
+        const float halfY = (tl.y - br.y) * 0.5f;
+        tl.x = p.x - halfX;
+        tl.y = p.y + halfY;
+        br.x = p.x + halfX;
+        br.y = p.y - halfY;
+    }
+
+    // check the collision
+    inline bool
+    collide(const AABB &o) const
+    {
+        return !((o.br.x < tl.x) || (o.tl.x > br.x) || (o.tl.y < br.y)
+            || (tl.y < o.br.y));
+    }
+
+};
+
+typedef AABB AlignedBox;
+
+}
+
+#endif /* AABB_H_ */
