@@ -47,14 +47,68 @@
 #define DEBUG_INVERT	"\33[7m"
 
 
+
 #ifdef DEBUG
 	#include <assert.h>
 	#include <iostream>
 	#include <stdio.h>
 
-	#define ASSERT(x)	assert(x);
-	//#define OGRELOG(x)	Ogre::LogManager().getSingleton().logMessage(x)
-	#define OGRELOG(x)	std::cerr << "OGRELOG: " << (x) << std::endl;
+
+// common stuff
+//
+#define ASSERT(x)   assert(x);
+#define OGRELOG(x)  std::cerr << "OGRELOG: " << (x) << std::endl;
+
+
+
+
+// WINDOWS STUFF
+//
+#if defined(_WIN32) || defined(CYGWIN) || defined(WIN32) || defined (MINGW)
+#define debug(format, ...) {fprintf(stderr, "DEBUG[%s, %s, %d]: ", \
+                     __FILE__, __FUNCTION__, __LINE__); \
+                    fprintf(stderr, format , ## __VA_ARGS__);fflush(stderr);}
+#define debugRED(format, ...) {fprintf(stderr, "DEBUG_RED[%s, %s, %d]: ", \
+                     __FILE__, __FUNCTION__, __LINE__); \
+                    fprintf(stderr, format "\33[0m", ## __VA_ARGS__); fflush(stderr);}
+
+#define debugYELLOW(format, ...) {fprintf(stderr, "DEBUG_YELLOW[%s, %s, %d]: ", \
+                 __FILE__, __FUNCTION__, __LINE__); \
+                fprintf(stderr, format "\33[0m", ## __VA_ARGS__);fflush(stderr);}
+
+#define debugBLUE(format, ...) {fprintf(stderr, "DEBUG_BLUE[%s, %s, %d]: ", \
+                 __FILENAME__, __FUNCTION__, __LINE__); \
+                fprintf(stderr, format "\33[0m", ## __VA_ARGS__);fflush(stderr);}
+
+#define debugGREEN(format, ...) {fprintf(stderr,  "DEBUG_GREEN[%s, %s, %d]: ", \
+                 __FILENAME__, __FUNCTION__, __LINE__); \
+                fprintf(stderr, format "\33[0m", ## __VA_ARGS__);fflush(stderr);}
+
+#define debugOPTIMIZATION(format, ...) {fprintf(stderr, "DEBUG_OPTIMIZATION[%s, %s, %d]: ", \
+                 __FILENAME__, __FUNCTION__, __LINE__); \
+                fprintf(stderr, format "\33[0m", ## __VA_ARGS__);fflush(stderr);}
+
+#define debugERROR(format, ...) {fprintf(stderr, "DEBUG_ERROR[%s, %s, %d]: ", \
+                     __FILE__, __FUNCTION__, __LINE__); \
+                    fprintf(stderr, format "\33[0m", ## __VA_ARGS__);fflush(stderr);}
+
+#define debugWARNING(format, ...) {fprintf(stderr, "DEBUG_WARNING[%s, %s, %d]: ", \
+                     __FILE__, __FUNCTION__, __LINE__); \
+                    fprintf(stderr, format "\33[0m", ## __VA_ARGS__);fflush(stderr);}
+
+#define testBEGIN(format, ...) {fprintf(stdout, "TEST_BEGIN[%s, %s, %d]: ", \
+                 __FILENAME__, __FUNCTION__, __LINE__); \
+                fprintf(stdout, format "\33[0m", ## __VA_ARGS__);fflush(stderr);}
+
+#define testSUCCESS(format, ...) {fprintf(stdout, "TEST_SUCCESS[%s, %s, %d]: ", \
+                 __FILENAME__, __FUNCTION__, __LINE__); \
+                fprintf(stdout, format "\33[0m", ## __VA_ARGS__);fflush(stderr);}
+
+#define testFAIL(format, ...) {fprintf(stdout, "TEST_FAIL[%s, %s, %d]: ", \
+                 __FILENAME__, __FUNCTION__, __LINE__); \
+                fprintf(stdout, format "\33[0m", ## __VA_ARGS__);fflush(stderr);}
+#else
+
 	#define debug(format, ...) {fprintf(stderr, "\33[0mDEBUG[%s, %s, %d]: ", \
 					 __FILE__, __FUNCTION__, __LINE__); \
 					fprintf(stderr, format , ## __VA_ARGS__);}
@@ -75,17 +129,9 @@
 					 __FILENAME__, __FUNCTION__, __LINE__); \
 					fprintf(stderr, format "\33[0m", ## __VA_ARGS__);}
 
-	#define debugColor(color, format, ...) {fprintf(stderr, color "DEBUG[%s, %s, %d]: ", \
-					 __FILENAME__, __FUNCTION__, __LINE__); \
-					fprintf(stderr, format "\33[0m", ## __VA_ARGS__);}
-
 	#define debugOPTIMIZATION(format, ...) {fprintf(stderr, DEBUG_ULINE DEBUG_INVERT "DEBUG[%s, %s, %d]: ", \
 					 __FILENAME__, __FUNCTION__, __LINE__); \
 					fprintf(stderr, format "\33[0m", ## __VA_ARGS__);}
-
-	#define debugRAUL(format, ...) {fprintf(stderr,DEBUG_BOLD DEBUG_YELLOW "DEBUG[%s, %s, %d]: ", \
-					 __FILE__, __FUNCTION__, __LINE__); \
-					fprintf(stderr, format "\33[0m" "\33[0m", ## __VA_ARGS__);}
 
 	#define debugERROR(format, ...) {fprintf(stderr, DEBUG_RED DEBUG_INVERT "DEBUG[%s, %s, %d]: ", \
 						 __FILE__, __FUNCTION__, __LINE__); \
@@ -107,6 +153,8 @@
 					 __FILENAME__, __FUNCTION__, __LINE__); \
 					fprintf(stdout, format "\33[0m", ## __VA_ARGS__);}
 
+#endif
+
 #else
 	#define ASSERT(x)
 	#define OGRELOG(x)
@@ -115,9 +163,7 @@
 	#define debugRED(format, ...)
 	#define debugGREEN(format, ...)
 	#define debugBLUE(format, ...)
-	#define debugColor(color, format, ...)
 	#define debugOPTIMIZATION(format, ...)
-	#define debugRAUL(format, ...)
 	#define debugERROR(format, ...)
 	#define debugWARNING(format, ...)
 	#define testBEGIN(format, ...)
