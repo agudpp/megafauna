@@ -60,53 +60,25 @@
 #define OGRELOG(x)  std::cerr << "OGRELOG: " << (x) << std::endl;
 
 
-
-
 // WINDOWS STUFF
 //
 #if defined(_WIN32) || defined(CYGWIN) || defined(WIN32) || defined (MINGW)
-#define debug(format, ...) {fprintf(stderr, "DEBUG[%s, %s, %d]: ", \
-                     __FILE__, __FUNCTION__, __LINE__); \
-                    fprintf(stderr, format , ## __VA_ARGS__);fflush(stderr);}
-#define debugRED(format, ...) {fprintf(stderr, "DEBUG_RED[%s, %s, %d]: ", \
-                     __FILE__, __FUNCTION__, __LINE__); \
-                    fprintf(stderr, format "\33[0m", ## __VA_ARGS__); fflush(stderr);}
+// TODO: note that there are not outputs for printf in console for mingw apps since 
+// we are compiling it probably compiled with the -mwindows flag (this disconnect
+// the stdout and stderr from the console). We will need to write the data to some log
+// file
+	#define debug(format,...)
+	#define debugYELLOW(format, ...)
+	#define debugRED(format, ...)
+	#define debugGREEN(format, ...)
+	#define debugBLUE(format, ...)
+	#define debugOPTIMIZATION(format, ...)
+	#define debugERROR(format, ...)
+	#define debugWARNING(format, ...)
+	#define testBEGIN(format, ...)
+	#define testSUCCESS(format, ...)
+	#define testFAIL(format, ...)
 
-#define debugYELLOW(format, ...) {fprintf(stderr, "DEBUG_YELLOW[%s, %s, %d]: ", \
-                 __FILE__, __FUNCTION__, __LINE__); \
-                fprintf(stderr, format "\33[0m", ## __VA_ARGS__);fflush(stderr);}
-
-#define debugBLUE(format, ...) {fprintf(stderr, "DEBUG_BLUE[%s, %s, %d]: ", \
-                 __FILENAME__, __FUNCTION__, __LINE__); \
-                fprintf(stderr, format "\33[0m", ## __VA_ARGS__);fflush(stderr);}
-
-#define debugGREEN(format, ...) {fprintf(stderr,  "DEBUG_GREEN[%s, %s, %d]: ", \
-                 __FILENAME__, __FUNCTION__, __LINE__); \
-                fprintf(stderr, format "\33[0m", ## __VA_ARGS__);fflush(stderr);}
-
-#define debugOPTIMIZATION(format, ...) {fprintf(stderr, "DEBUG_OPTIMIZATION[%s, %s, %d]: ", \
-                 __FILENAME__, __FUNCTION__, __LINE__); \
-                fprintf(stderr, format "\33[0m", ## __VA_ARGS__);fflush(stderr);}
-
-#define debugERROR(format, ...) {fprintf(stderr, "DEBUG_ERROR[%s, %s, %d]: ", \
-                     __FILE__, __FUNCTION__, __LINE__); \
-                    fprintf(stderr, format "\33[0m", ## __VA_ARGS__);fflush(stderr);}
-
-#define debugWARNING(format, ...) {fprintf(stderr, "DEBUG_WARNING[%s, %s, %d]: ", \
-                     __FILE__, __FUNCTION__, __LINE__); \
-                    fprintf(stderr, format "\33[0m", ## __VA_ARGS__);fflush(stderr);}
-
-#define testBEGIN(format, ...) {fprintf(stdout, "TEST_BEGIN[%s, %s, %d]: ", \
-                 __FILENAME__, __FUNCTION__, __LINE__); \
-                fprintf(stdout, format "\33[0m", ## __VA_ARGS__);fflush(stderr);}
-
-#define testSUCCESS(format, ...) {fprintf(stdout, "TEST_SUCCESS[%s, %s, %d]: ", \
-                 __FILENAME__, __FUNCTION__, __LINE__); \
-                fprintf(stdout, format "\33[0m", ## __VA_ARGS__);fflush(stderr);}
-
-#define testFAIL(format, ...) {fprintf(stdout, "TEST_FAIL[%s, %s, %d]: ", \
-                 __FILENAME__, __FUNCTION__, __LINE__); \
-                fprintf(stdout, format "\33[0m", ## __VA_ARGS__);fflush(stderr);}
 #else
 
 	#define debug(format, ...) {fprintf(stderr, "\33[0mDEBUG[%s, %s, %d]: ", \
