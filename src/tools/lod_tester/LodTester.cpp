@@ -1,5 +1,5 @@
 /*
- * AnimPlayer.cpp
+ * LodTester.cpp
  *
  *  Created on: 15/08/2011
  *      Author: agustin
@@ -9,47 +9,17 @@
 #include <OgreAnimationState.h>
 #include <OgreResourceManager.h>
 #include <OgreFontManager.h>
+#include <OgreSkeletonManager.h>
+#include <OgreMeshManager.h>
+#include <OgreStringConverter.h>
 
-#include "AnimPlayer.h"
+#include "LodTester.h"
 
 namespace tool {
 
-void
-AnimPlayer::loadAnimations(void)
-{
-    Ogre::AnimationStateSet *allAnim = ent->getAllAnimationStates();
-    Ogre::AnimationStateIterator it = allAnim->getAnimationStateIterator();
-
-    while(it.hasMoreElements()){
-        Ogre::AnimationState *anim = it.getNext();
-        if (!anim) {
-            break;
-        }
-        mAnims.push_back(anim);
-    }
-    mCurrentIndex = 0;
-    // set enable the current anim
-    mAnims.back()->setEnabled(true);
-}
 
 void
-AnimPlayer::changeAnim(int i)
-{
-    ASSERT(i < mAnims.size());
-
-    mActualAnim->setEnabled(false);
-    mActualAnim = mAnims[i];
-    mActualAnim->setTimePosition(0);
-    mActualAnim->setEnabled(true);
-
-    // update the text
-    if (mActualAnim != 0) {
-        mAnimText.setText("Animation: " + mActualAnim->getAnimationName());
-    }
-}
-
-void
-AnimPlayer::handleCameraInput()
+LodTester::handleCameraInput()
 {
     ///////////////////////////////////////////////////////////////////////////
     // CAMERA
@@ -134,50 +104,58 @@ AnimPlayer::handleCameraInput()
 
 }
 
-AnimPlayer::AnimPlayer() :
+LodTester::LodTester() :
     core::AppTester(mTimeFrame)
 ,   mOrbitCamera(mCamera, mSceneMgr, mTimeFrame)
 {
     setUseDefaultInput(false);
 }
 
-AnimPlayer::~AnimPlayer()
+LodTester::~LodTester()
 {
     // TODO Auto-generated destructor stub
 }
 
 /* Load additional info */
 void
-AnimPlayer::loadAditionalData(void)
+LodTester::loadAditionalData(void)
 {
-    ent = mSceneMgr->createEntity("gusanohi.mesh");
-    node = mSceneMgr->getRootSceneNode()->createChildSceneNode();
-    node->attachObject(ent);
+    // Load the meshes and LOD first!
+    // load the lod meshes
+    Ogre::MeshManager& meshManager = Ogre::MeshManager::getSingleton();
+    Ogre::MeshPtr hiMesh = meshManager.load("gusanohi.mesh", "Popular");
+    Ogre::MeshPtr lowMesh = meshManager.load("gusanolow.mesh", "Popular");
+    hiMesh->createManualLodLevel(25.0f, lowMesh->getName());
 
-    loadAnimations();
+    // use the same skeleton
+    Ogre::SkeletonPtr skeleton = hiMesh->getSkeleton();
+    lowMesh->setSkeletonName(skeleton->getName());
+
+    // Then create the entity using the already loaded mesh
+    mEntity = mSceneMgr->createEntity("gusano", hiMesh->getName());
+    mNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
+    mNode->attachObject(mEntity);
+    mEntity->setMaterialName("gusano_real");
+
+    // load the animation
+    mActualAnim = mEntity->getAnimationState("camina");
+    ASSERT(mActualAnim);
+    mActualAnim->setLoop(true);
+    mActualAnim->setEnabled(true);
 
     // configure the text for ogre
-    mModelLoadedText.setPos(0.f, 0.f);
-    mAnimText.setPos(0.f, 0.05f);
+    mDistanceText.setPos(0.f, 0.f);
+    mMeshText.setPos(0.f, 0.08f);
 
     // TODO: ugly way to load all the fonts at the beginning
     Ogre::ResourceManager::ResourceMapIterator iter =
         Ogre::FontManager::getSingleton().getResourceIterator();
     while (iter.hasMoreElements()) { iter.getNext()->load(); }
-
-    mModelLoadedText.setText("EntityLoaded: " + ent->getName());
-    mActualAnim = mAnims.empty() ? 0 : mAnims[0];
-    if (mActualAnim == 0) {
-        mAnimText.setText("No animations found\n");
-    } else {
-        mAnimText.setText("Animation: " + mActualAnim->getAnimationName());
-    }
-
 }
 
 /* function called every frame. Use GlobalObjects::lastTimeFrame */
 void
-AnimPlayer::update()
+LodTester::update()
 {
     static bool keyNextPressed = false;
     static bool keyBackPressed = false;
@@ -192,32 +170,10 @@ AnimPlayer::update()
     }
 	mActualAnim->addTime(mGlobalTimeFrame);
 
-    if (mActualAnim->hasEnded()) {
-        // start the animation again
-        mActualAnim->setTimePosition(0.f);
-    }
-
-    // check for user input
-    if (mKeyboard->isKeyDown(OIS::KC_ADD)) {
-        if (!keyNextPressed) {
-            keyNextPressed = true;
-            // add one to the counter
-            mCurrentIndex = (mCurrentIndex + 1) % mAnims.size();
-            changeAnim(mCurrentIndex);
-        }
-    } else {
-        keyNextPressed = false;
-    }
-    if (mKeyboard->isKeyDown(OIS::KC_MINUS)) {
-        if (!keyBackPressed) {
-            keyBackPressed = true;
-            // decrement one to the counter
-            mCurrentIndex = (mCurrentIndex == 0) ? mAnims.size() - 1 : mCurrentIndex - 1;
-            changeAnim(mCurrentIndex);
-        }
-    } else {
-        keyBackPressed = false;
-    }
+    // calculate distance and print it
+	const Ogre::Real dist = mOrbitCamera.getCameraPosition().distance(mNode->getPosition());
+	mDistanceText.setText("Distance to object: " + Ogre::StringConverter::toString(dist));
+	mMeshText.setText("MeshName: " + mEntity->getMesh()->getName());
 
     handleCameraInput();
 
