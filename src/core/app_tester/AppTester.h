@@ -28,6 +28,7 @@
 /* own libs */
 
 #include <debug/DebugUtil.h>
+#include <debug/OgreText.h>
 
 /* Here we will define the default values of the resources and plugins config
  * files */
@@ -70,6 +71,11 @@ public:
     {
         mDefaultInput = d;
     }
+
+    // show the FPS at the botton left corner
+    //
+    inline void
+    showFPS(bool show) {mShowFPS = show;}
 
     virtual
     ~AppTester();
@@ -147,6 +153,9 @@ protected:
 
     bool mAnimCamera;
     float &mGlobalTimeFrame;
+
+    bool mShowFPS;
+    OgreText* mFPSText;
 
 };
 

@@ -91,7 +91,7 @@ endif()
 set (DEV_ROOT_PATH $ENV{MEGAFAUNA_DEV_PATH})
 
 ## Common flags
-add_definitions(-DDEBUG)
+add_definitions(-DDEBUG -g)
 add_definitions(-std=c++11)  # C++11 standard
 set(COMMON_LIBRARIES boost_signals boost_system)
 if(WIN32)
