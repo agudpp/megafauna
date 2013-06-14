@@ -122,10 +122,12 @@ LodTester::loadAditionalData(void)
 {
     // Load the meshes and LOD first!
     // load the lod meshes
+    const Ogre::Real lodValue = 5.0f;
+
     Ogre::MeshManager& meshManager = Ogre::MeshManager::getSingleton();
     Ogre::MeshPtr hiMesh = meshManager.load("gusanohi.mesh", "Popular");
     Ogre::MeshPtr lowMesh = meshManager.load("gusanolow.mesh", "Popular");
-    hiMesh->createManualLodLevel(25.0f, lowMesh->getName());
+    hiMesh->createManualLodLevel(lodValue, lowMesh->getName());
 
     // use the same skeleton
     Ogre::SkeletonPtr skeleton = hiMesh->getSkeleton();
@@ -136,6 +138,13 @@ LodTester::loadAditionalData(void)
     mNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
     mNode->attachObject(mEntity);
     mEntity->setMaterialName("gusano_real");
+
+    const Ogre::LodStrategy* strategy = hiMesh->getLodStrategy();
+    ASSERT(strategy);
+    std::cout << "strategy->transformUserValue(lodValue): " << strategy->transformUserValue(lodValue) << std::endl;
+    std::cout << "strategy->name(): " << strategy->getName().c_str() << std::endl;
+    ushort lodIndex = hiMesh->getLodIndex(strategy->transformUserValue(lodValue));
+    std::cout << "lodIndex:" << lodIndex << std::endl;
 
     // load the animation
     mActualAnim = mEntity->getAnimationState("camina");
