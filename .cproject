@@ -28,6 +28,7 @@
 									<listOptionValue builtIn="false" value="/usr/include/ois"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/megafauna/src/megafauna}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/megafauna/src/tools}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${MEGAFAUNA_THIRD_PARTY}/include&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1241432002" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
@@ -37,6 +38,7 @@
 									<listOptionValue builtIn="false" value="/usr/include/ois"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/megafauna/src/megafauna}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/megafauna/src/tools}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${MEGAFAUNA_THIRD_PARTY}/include&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.377668034" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
@@ -53,6 +55,7 @@
 									<listOptionValue builtIn="false" value="/usr/include/ois"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/megafauna/src/megafauna}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/megafauna/src/tools}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${MEGAFAUNA_THIRD_PARTY}/include&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1683375301" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>

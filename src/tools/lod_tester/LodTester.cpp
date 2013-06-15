@@ -12,6 +12,9 @@
 #include <OgreSkeletonManager.h>
 #include <OgreMeshManager.h>
 #include <OgreStringConverter.h>
+#include <OgreMeshSerializer.h>
+#include <OgreAxisAlignedBox.h>
+
 
 #include "LodTester.h"
 
@@ -33,6 +36,9 @@ LodTester::handleCameraInput()
     // without using translation, this is because we want to move always
     // in the same axis whatever be the direction of the camera.
 
+    const Ogre::Real increaseFactor = (mKeyboard->isKeyDown(OIS::KC_LSHIFT)) ?
+        0.2f : 1.0f;
+
 
     // MOUSE
     const OIS::MouseState& lMouseState = mMouse->getMouseState();
@@ -40,12 +46,12 @@ LodTester::handleCameraInput()
     if(mKeyboard->isKeyDown(OIS::KC_LEFT) || mKeyboard->isKeyDown(OIS::KC_A) ||
             lMouseState.X.abs <= 0)
     {
-        mTranslationVec.x -= 1.0f;
+        mTranslationVec.x -= 1.0f * increaseFactor;
     }
     if(mKeyboard->isKeyDown(OIS::KC_RIGHT) || mKeyboard->isKeyDown(OIS::KC_D) ||
             lMouseState.X.abs >= lMouseState.width)
     {
-        mTranslationVec.x += 1.0f;
+        mTranslationVec.x += 1.0f * increaseFactor;
     }
     if(mKeyboard->isKeyDown(OIS::KC_Q))
     {
@@ -58,12 +64,12 @@ LodTester::handleCameraInput()
     if(mKeyboard->isKeyDown(OIS::KC_UP) || mKeyboard->isKeyDown(OIS::KC_W) ||
             lMouseState.Y.abs <= 0)
     {
-        mTranslationVec.z -= 1.0f;
+        mTranslationVec.z -= 1.0f * increaseFactor;
     }
     if(mKeyboard->isKeyDown(OIS::KC_DOWN) || mKeyboard->isKeyDown(OIS::KC_S) ||
             lMouseState.Y.abs >= lMouseState.height)
     {
-        mTranslationVec.z += 1.0f;
+        mTranslationVec.z += 1.0f * increaseFactor;
     }
 
     if(mTranslationVec != Ogre::Vector3::ZERO)
@@ -77,9 +83,9 @@ LodTester::handleCameraInput()
     const float lMouseZ = float(lMouseState.Z.rel);
     float scrollZoom = mOrbitCamera.zoom();
     if (lMouseZ > 0.0f) {
-        scrollZoom += 5.f;
+        scrollZoom += 5.f * increaseFactor;
     } else if (lMouseZ < 0.0f) {
-        scrollZoom -= 5.f;
+        scrollZoom -= 5.f * increaseFactor;
     }
     if(scrollZoom != mOrbitCamera.zoom()){
         mOrbitCamera.setZoom(scrollZoom);
@@ -90,7 +96,7 @@ LodTester::handleCameraInput()
     const float lMouseX = float(lMouseState.X.rel);
     const float lMouseY = float(lMouseState.Y.rel);
     if(lMouseState.buttonDown(OIS::MB_Right)){
-        const float factor = -0.01 * 1.5f;
+        const float factor = -0.01 * 1.5f * increaseFactor;
         mOrbitCamera.rotateCamera(Ogre::Radian(lMouseX * factor),
                                     Ogre::Radian(lMouseY * factor));
     }
@@ -122,28 +128,60 @@ LodTester::loadAditionalData(void)
 {
     // Load the meshes and LOD first!
     // load the lod meshes
-    const Ogre::Real lodValue = 5.0f;
+    const Ogre::Real lodValue = 100.0f;
 
     Ogre::MeshManager& meshManager = Ogre::MeshManager::getSingleton();
-    Ogre::MeshPtr hiMesh = meshManager.load("gusanohi.mesh", "Popular");
-    Ogre::MeshPtr lowMesh = meshManager.load("gusanolow.mesh", "Popular");
-    hiMesh->createManualLodLevel(lodValue, lowMesh->getName());
+    Ogre::MeshPtr mesh1 = meshManager.load("mesh1.mesh", "Popular");
+    Ogre::MeshPtr mesh2 = meshManager.load("mesh2.mesh", "Popular");
+    Ogre::MeshPtr mesh3 = meshManager.load("mesh3.mesh", "Popular");
+    Ogre::MeshPtr mesh4 = meshManager.load("mesh4.mesh", "Popular");
+    mesh1->removeLodLevels();
+    mesh1->createManualLodLevel(lodValue, mesh2->getName());
+    mesh1->createManualLodLevel(lodValue + 50.0f, mesh3->getName());
+    mesh1->createManualLodLevel(lodValue + 100.0f, mesh4->getName());
 
     // use the same skeleton
-    Ogre::SkeletonPtr skeleton = hiMesh->getSkeleton();
-    lowMesh->setSkeletonName(skeleton->getName());
+    Ogre::SkeletonPtr skeleton = mesh1->getSkeleton();
+    mesh2->setSkeletonName(skeleton->getName());
+    mesh3->setSkeletonName(skeleton->getName());
+    mesh4->setSkeletonName(skeleton->getName());
+
+    // export it
+//    Ogre::MeshSerializer serializer;
+//    serializer.exportMesh(mesh1.get(), "serializedMesh.mesh");
 
     // Then create the entity using the already loaded mesh
-    mEntity = mSceneMgr->createEntity("gusano", hiMesh->getName());
+    mEntity = mSceneMgr->createEntity("gusano", mesh1->getName());
     mNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
     mNode->attachObject(mEntity);
     mEntity->setMaterialName("gusano_real");
 
-    const Ogre::LodStrategy* strategy = hiMesh->getLodStrategy();
+
+    // do some debug info
+    Ogre::MeshPtr entMesh = mEntity->getMesh();
+    std::cout << "isLodManual(ent): " << entMesh->isLodManual() << std::endl <<
+        "isLodManual(real): " << mesh1->isLodManual() << std::endl;
+    std::cout << "SceneManager: " << mSceneMgr->getName() << std::endl;
+    std::cout << "Mesh1->lodCount(): "  << mesh1->getNumLodLevels() << std::endl;
+
+    const Ogre::AxisAlignedBox& aabbm1 = mesh1->getBounds();
+    const Ogre::AxisAlignedBox& aabbm2 = mesh2->getBounds();
+    const Ogre::AxisAlignedBox& aabbm3 = mesh3->getBounds();
+    const Ogre::AxisAlignedBox& aabbm4 = mesh4->getBounds();
+    std::cout << "box1: " << aabbm1.getSize().length() << " and distance to camera: " <<
+        aabbm1.distance(mOrbitCamera.getCameraPosition()) << std::endl;
+    std::cout << "box2: " << aabbm2.getSize().length() << " and distance to camera: " <<
+        aabbm2.distance(mOrbitCamera.getCameraPosition()) << std::endl;
+    std::cout << "box3: " << aabbm3.getSize().length() << " and distance to camera: " <<
+        aabbm3.distance(mOrbitCamera.getCameraPosition()) << std::endl;
+    std::cout << "box4: " << aabbm4.getSize().length() << " and distance to camera: " <<
+        aabbm4.distance(mOrbitCamera.getCameraPosition()) << std::endl;
+
+    const Ogre::LodStrategy* strategy = mesh1->getLodStrategy();
     ASSERT(strategy);
     std::cout << "strategy->transformUserValue(lodValue): " << strategy->transformUserValue(lodValue) << std::endl;
     std::cout << "strategy->name(): " << strategy->getName().c_str() << std::endl;
-    ushort lodIndex = hiMesh->getLodIndex(strategy->transformUserValue(lodValue));
+    ushort lodIndex = mesh1->getLodIndex(strategy->transformUserValue(lodValue));
     std::cout << "lodIndex:" << lodIndex << std::endl;
 
     // load the animation
