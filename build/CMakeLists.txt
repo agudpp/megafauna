@@ -123,6 +123,17 @@ include_directories( ${OIS_INCLUDE_DIRS}
 # Include all the other specific files
 include(${DEV_ROOT_PATH}/../build/ToCompile.cmake)
 
+################################################################################
+##			Third party libraries				      ##
+################################################################################
+
+# Tinyxml static linkage 
+add_library(tinyxml STATIC IMPORTED)
+# point the imported target at the real file
+set_property(TARGET tinyxml PROPERTY
+                IMPORTED_LOCATION ${THIRD_PARTY_LIBS}/lib/tinyxml.a)
+set(COMMON_LIBRARIES ${COMMON_LIBRARIES} tinyxml)
+
 
 add_executable(OgreApp WIN32 ${HDRS} ${SRCS})
  
