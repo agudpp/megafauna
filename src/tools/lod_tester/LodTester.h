@@ -57,7 +57,6 @@ private:
     float mTimeFrame;
     OrbitCamera mOrbitCamera;
     core::OgreText mDistanceText;
-    core::OgreText mMeshText;
 };
 
 }

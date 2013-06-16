@@ -98,9 +98,9 @@ OrbitCamera::setZoom(const Ogre::Real zoom)
     }
     Ogre::Vector3 posVec = mZoomNode->getPosition();
     posVec.normalise();
-    const Ogre::Real len = zoom * mStartDistance * 0.01f;
+    mZoom = (zoom <= 0) ? 0.01f : zoom;
+    const Ogre::Real len = mZoom * mStartDistance * 0.01f;
     mZoomNode->setPosition(posVec * len);
-    mZoom = zoom;
 }
 
 inline const Ogre::Vector3&

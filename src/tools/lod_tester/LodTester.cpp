@@ -229,7 +229,6 @@ LodTester::loadAditionalData(void)
 
     // configure the text for ogre
     mDistanceText.setPos(0.f, 0.f);
-    mMeshText.setPos(0.f, 0.08f);
 
     // TODO: ugly way to load all the fonts at the beginning
     Ogre::ResourceManager::ResourceMapIterator iter =
@@ -257,7 +256,6 @@ LodTester::update()
     // calculate distance and print it
 	const Ogre::Real dist = mOrbitCamera.getCameraPosition().distance(mNode->getPosition());
 	mDistanceText.setText("Distance to object: " + Ogre::StringConverter::toString(dist));
-	mMeshText.setText("MeshName: " + mEntity->getMesh()->getName());
 
     handleCameraInput();
 

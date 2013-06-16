@@ -40,6 +40,7 @@ public:
                 "TextArea", szElement));
         panel->addChild(textArea);
         overlay->show();
+        setText("");
     }
     ~OgreText()
     {
