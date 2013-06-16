@@ -109,11 +109,5 @@ OrbitCamera::getCameraPosition(void) const
     return mCamera->getRealPosition();
 }
 
-inline const Ogre::Vector3&
-OrbitCamera::getCameraPosition(void) const
-{
-    return mCamera->getRealPosition();
-}
-
 } /* namespace tool */
 #endif /* ORBITCAMERA_H_ */
