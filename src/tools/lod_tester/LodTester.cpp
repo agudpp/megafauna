@@ -5,6 +5,12 @@
  *      Author: agustin
  */
 
+#include "LodTester.h"
+
+#include <memory>
+#include <string>
+#include <vector>
+
 #include <OgreMath.h>
 #include <OgreAnimationState.h>
 #include <OgreResourceManager.h>
@@ -14,13 +20,16 @@
 #include <OgreStringConverter.h>
 #include <OgreMeshSerializer.h>
 #include <OgreAxisAlignedBox.h>
+#include <tinyxml/tinyxml.h>
+
+#include <xml/XMLHelper.h>
+#include <types/basics.h>
 
 
-#include "LodTester.h"
 
 namespace tool {
 
-
+////////////////////////////////////////////////////////////////////////////////
 void
 LodTester::handleCameraInput()
 {
@@ -43,13 +52,11 @@ LodTester::handleCameraInput()
     // MOUSE
     const OIS::MouseState& lMouseState = mMouse->getMouseState();
 
-    if(mKeyboard->isKeyDown(OIS::KC_LEFT) || mKeyboard->isKeyDown(OIS::KC_A) ||
-            lMouseState.X.abs <= 0)
+    if(mKeyboard->isKeyDown(OIS::KC_LEFT) || mKeyboard->isKeyDown(OIS::KC_A))
     {
         mTranslationVec.x -= 1.0f * increaseFactor;
     }
-    if(mKeyboard->isKeyDown(OIS::KC_RIGHT) || mKeyboard->isKeyDown(OIS::KC_D) ||
-            lMouseState.X.abs >= lMouseState.width)
+    if(mKeyboard->isKeyDown(OIS::KC_RIGHT) || mKeyboard->isKeyDown(OIS::KC_D))
     {
         mTranslationVec.x += 1.0f * increaseFactor;
     }
@@ -61,13 +68,11 @@ LodTester::handleCameraInput()
     {
         zoom -= 0.5f;
     }
-    if(mKeyboard->isKeyDown(OIS::KC_UP) || mKeyboard->isKeyDown(OIS::KC_W) ||
-            lMouseState.Y.abs <= 0)
+    if(mKeyboard->isKeyDown(OIS::KC_UP) || mKeyboard->isKeyDown(OIS::KC_W))
     {
         mTranslationVec.z -= 1.0f * increaseFactor;
     }
-    if(mKeyboard->isKeyDown(OIS::KC_DOWN) || mKeyboard->isKeyDown(OIS::KC_S) ||
-            lMouseState.Y.abs >= lMouseState.height)
+    if(mKeyboard->isKeyDown(OIS::KC_DOWN) || mKeyboard->isKeyDown(OIS::KC_S) )
     {
         mTranslationVec.z += 1.0f * increaseFactor;
     }
@@ -107,82 +112,114 @@ LodTester::handleCameraInput()
     } else if (mKeyboard->isKeyDown(OIS::KC_2)) {
         mOrbitCamera.setCameraType(OrbitCamera::CameraType::Orbit);
     }
-
 }
 
+////////////////////////////////////////////////////////////////////////////////
+bool
+LodTester::loadLODxml(Ogre::MeshPtr& resultMesh)
+{
+    // Load the xml document
+    std::shared_ptr<TiXmlDocument> doc(core::XMLHelper::loadXmlDocument(LOD_XML_FILE));
+    if (doc.get() == 0) {
+        return false;
+    }
+
+    // parse the document
+    //    <LODEntity>
+    //        <Level meshName="mesh1.mesh" />
+    //        <Level meshName="mesh2.mesh" distance="50" />
+    //        <Level meshName="mesh3.mesh" distance="230" />
+    //    </LODEntity>
+    //
+    const TiXmlElement* root = doc->RootElement();
+    if (root == 0) {
+        debugERROR("Ill formed xml, no root element\n");
+        return false;
+    }
+
+    if (std::string(root->Value()) != "LODEntity") {
+        debugERROR("Ill formed xml, we spect LODEntity and we get %s\n",
+            root->Value());
+        return false;
+    }
+    std::vector<const TiXmlElement*> levels;
+    levels.reserve(10);
+    core::XMLHelper::getFirstElements(root, levels);
+
+    if (levels.empty()) {
+        debugWARNING("No Levels found for LODEntity\n");
+        return false;
+    }
+
+    // get the main mesh
+    const char* value = levels.front()->Attribute("meshName");
+    if (value == 0) {
+        debugERROR("No meshname given for the main mesh in the first Level\n");
+        return false;
+    }
+
+    // load meshes
+    Ogre::MeshManager& meshManager = Ogre::MeshManager::getSingleton();
+    resultMesh = meshManager.load(value, "Popular");
+    resultMesh->removeLodLevels();
+    Ogre::SkeletonPtr skeleton = resultMesh->getSkeleton();
+
+    // iterate over all the elements
+    for (core::size_t i = 1, size = levels.size(); i < size; ++i) {
+        value = levels[i]->Attribute("meshName");
+        if (value == 0) {
+            debugERROR("No meshname given for the mesh level %d\n",
+                static_cast<int>(i));
+            continue;
+        }
+        const char* distanceStr = levels[i]->Attribute("distance");
+        if (distanceStr == 0) {
+            debugERROR("No distance found for mesh in Level %d\n",
+                static_cast<int>(i));
+            continue;
+        }
+        const Ogre::Real distance = Ogre::StringConverter::parseReal(distanceStr);
+
+        // parse the mesh and add it to the mesh1
+        Ogre::MeshPtr mesh = meshManager.load(value, "Popular");
+        mesh->setSkeletonName(skeleton->getName());
+        resultMesh->createManualLodLevel(distance, mesh->getName());
+    }
+
+    return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 LodTester::LodTester() :
     core::AppTester(mTimeFrame)
 ,   mOrbitCamera(mCamera, mSceneMgr, mTimeFrame)
 {
     setUseDefaultInput(false);
+    mOrbitCamera.setCameraType(OrbitCamera::CameraType::FreeFly);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 LodTester::~LodTester()
 {
     // TODO Auto-generated destructor stub
 }
 
-/* Load additional info */
+////////////////////////////////////////////////////////////////////////////////
 void
 LodTester::loadAditionalData(void)
 {
     // Load the meshes and LOD first!
-    // load the lod meshes
-    const Ogre::Real lodValue = 100.0f;
-
-    Ogre::MeshManager& meshManager = Ogre::MeshManager::getSingleton();
-    Ogre::MeshPtr mesh1 = meshManager.load("mesh1.mesh", "Popular");
-    Ogre::MeshPtr mesh2 = meshManager.load("mesh2.mesh", "Popular");
-    Ogre::MeshPtr mesh3 = meshManager.load("mesh3.mesh", "Popular");
-    Ogre::MeshPtr mesh4 = meshManager.load("mesh4.mesh", "Popular");
-    mesh1->removeLodLevels();
-    mesh1->createManualLodLevel(lodValue, mesh2->getName());
-    mesh1->createManualLodLevel(lodValue + 50.0f, mesh3->getName());
-    mesh1->createManualLodLevel(lodValue + 100.0f, mesh4->getName());
-
-    // use the same skeleton
-    Ogre::SkeletonPtr skeleton = mesh1->getSkeleton();
-    mesh2->setSkeletonName(skeleton->getName());
-    mesh3->setSkeletonName(skeleton->getName());
-    mesh4->setSkeletonName(skeleton->getName());
-
-    // export it
-//    Ogre::MeshSerializer serializer;
-//    serializer.exportMesh(mesh1.get(), "serializedMesh.mesh");
+    Ogre::MeshPtr lodMesh;
+    if (!loadLODxml(lodMesh)) {
+        debugERROR("Error loading lod?\n");
+        return;
+    }
 
     // Then create the entity using the already loaded mesh
-    mEntity = mSceneMgr->createEntity("gusano", mesh1->getName());
+    mEntity = mSceneMgr->createEntity("lodMesh", lodMesh->getName());
     mNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
     mNode->attachObject(mEntity);
-    mEntity->setMaterialName("gusano_real");
-
-
-    // do some debug info
-    Ogre::MeshPtr entMesh = mEntity->getMesh();
-    std::cout << "isLodManual(ent): " << entMesh->isLodManual() << std::endl <<
-        "isLodManual(real): " << mesh1->isLodManual() << std::endl;
-    std::cout << "SceneManager: " << mSceneMgr->getName() << std::endl;
-    std::cout << "Mesh1->lodCount(): "  << mesh1->getNumLodLevels() << std::endl;
-
-    const Ogre::AxisAlignedBox& aabbm1 = mesh1->getBounds();
-    const Ogre::AxisAlignedBox& aabbm2 = mesh2->getBounds();
-    const Ogre::AxisAlignedBox& aabbm3 = mesh3->getBounds();
-    const Ogre::AxisAlignedBox& aabbm4 = mesh4->getBounds();
-    std::cout << "box1: " << aabbm1.getSize().length() << " and distance to camera: " <<
-        aabbm1.distance(mOrbitCamera.getCameraPosition()) << std::endl;
-    std::cout << "box2: " << aabbm2.getSize().length() << " and distance to camera: " <<
-        aabbm2.distance(mOrbitCamera.getCameraPosition()) << std::endl;
-    std::cout << "box3: " << aabbm3.getSize().length() << " and distance to camera: " <<
-        aabbm3.distance(mOrbitCamera.getCameraPosition()) << std::endl;
-    std::cout << "box4: " << aabbm4.getSize().length() << " and distance to camera: " <<
-        aabbm4.distance(mOrbitCamera.getCameraPosition()) << std::endl;
-
-    const Ogre::LodStrategy* strategy = mesh1->getLodStrategy();
-    ASSERT(strategy);
-    std::cout << "strategy->transformUserValue(lodValue): " << strategy->transformUserValue(lodValue) << std::endl;
-    std::cout << "strategy->name(): " << strategy->getName().c_str() << std::endl;
-    ushort lodIndex = mesh1->getLodIndex(strategy->transformUserValue(lodValue));
-    std::cout << "lodIndex:" << lodIndex << std::endl;
 
     // load the animation
     mActualAnim = mEntity->getAnimationState("camina");
@@ -200,7 +237,7 @@ LodTester::loadAditionalData(void)
     while (iter.hasMoreElements()) { iter.getNext()->load(); }
 }
 
-/* function called every frame. Use GlobalObjects::lastTimeFrame */
+////////////////////////////////////////////////////////////////////////////////
 void
 LodTester::update()
 {

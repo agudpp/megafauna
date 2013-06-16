@@ -1,0 +1,18 @@
+<!-- LODEntity definition:
+   - Each lod entity is composed by different level of deail meshes described in
+   - <Level> where:
+   -    meshName is the mesh to be used for that level
+   -    distance is the distance that will activate that specific mesh.
+   - The order in how are defined the Level are important, the first one is the 
+   - "base" mesh and will be used for the closest one (when the camera is near
+   - to the entity). In this example when the camera is between 0 and 50 units
+   - of distance from the entity (bounding box) it will be used the mesh1. If
+   - the camera is between 50 and 230 units of distance, mesh2 will be used.
+   - And if the camera is far away than 230 units from the entity, mesh3 will be
+   - used.
+-->
+<LODEntity>
+    <Level meshName="mesh1.mesh" />
+    <Level meshName="mesh2.mesh" distance="50" />
+    <Level meshName="mesh3.mesh" distance="230" /> 
+</LODEntity>

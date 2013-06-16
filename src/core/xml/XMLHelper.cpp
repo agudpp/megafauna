@@ -50,10 +50,7 @@ XMLHelper::closeXml(void)
     mDocument = 0;
 }
 
-
-/**
- * Returns the root element of the xml
- */
+////////////////////////////////////////////////////////////////////////////////
 const TiXmlElement *
 XMLHelper::getRootElement(void) const
 {
@@ -65,6 +62,31 @@ XMLHelper::getRootElement(void) const
 ////////////////////////////////////////////////////////////////////////////
 ////						Parse Static Functions						////
 ////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+TiXmlDocument*
+XMLHelper::loadXmlDocument(const char* filename)
+{
+    // TODO: use custom allocation instead of new here..
+    if (filename == 0) {
+        return 0;
+    }
+    TiXmlDocument* doc = new TiXmlDocument(filename);
+    if (doc == 0) {
+        debugERROR("Error loading the file %s\n", filename);
+        return 0;
+    }
+
+    // load
+    if (!doc->LoadFile()) {
+        debugERROR("Error parsing the file %s\n", filename);
+        delete doc;
+        return 0;
+    }
+
+    // everything goes fine
+    return doc;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 const TiXmlElement *

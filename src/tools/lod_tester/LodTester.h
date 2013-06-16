@@ -12,6 +12,7 @@
 #include <OgreAnimation.h>
 #include <OgreAnimationTrack.h>
 #include <OgreAnimationState.h>
+#include <OgreMesh.h>
 
 #include <vector>
 
@@ -20,6 +21,10 @@
 #include <debug/OgreText.h>
 #include <types/basics.h>
 #include <utils/OrbitCamera.h>
+
+
+// The filename of the xml to be loaded
+#define LOD_XML_FILE "lod.xml"
 
 namespace tool {
 
@@ -41,6 +46,9 @@ public:
 private:
     void
     handleCameraInput(void);
+
+    bool
+    loadLODxml(Ogre::MeshPtr& resultMesh);
 
 private:
     Ogre::SceneNode *mNode;
