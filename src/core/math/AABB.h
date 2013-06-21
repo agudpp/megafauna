@@ -33,6 +33,11 @@ struct AABB
     ,   br(bottomRight)
     {
     }
+    AABB(float top, float left, float bottom, float right) :
+        tl(Vector2(top, left))
+    ,   br(Vector2(bottom, right))
+    {
+    }
 
     // check if a point is inside of the box
     inline bool
