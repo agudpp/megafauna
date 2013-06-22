@@ -46,13 +46,6 @@ public:
     inline bool
     intersects(const TriggerZone& other) const;
 
-    // @brief Set/get the ID for this zone
-    //
-    inline core::uint16_t
-    id(void) const;
-    inline void
-    setID(core::uint16_t id);
-
     // @brief Configure the current zone of this object
     // @param zone  The zone to be used for this current instance
     //
@@ -70,7 +63,6 @@ public:
 
 private:
     TZType mZone;
-    core::uint16_t mID;
     core::uint16_t mMask;
 };
 
@@ -96,17 +88,6 @@ inline bool
 TriggerZone::intersects(const TriggerZone& other) const
 {
     return mZone.collide(other.mZone);
-}
-
-inline core::uint16_t
-TriggerZone::id(void) const
-{
-    return mID;
-}
-inline void
-TriggerZone::setID(core::uint16_t id)
-{
-    mID = id;
 }
 
 inline void

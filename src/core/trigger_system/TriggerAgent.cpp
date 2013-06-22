@@ -15,13 +15,12 @@ TriggerAgent::TriggerAgent(TriggerSystem& ts) :
     mTriggerSystem(ts)
 ,   currentColors(0)
 {
-    std::memset(closerZones, 0, sizeof(TriggerZone *) * (TS_NUM_COLORS+1));
 }
 
-void
+TriggerCode
 TriggerAgent::setPosition(const Vector2& position)
 {
-    mTriggerSystem.updateAgentPos(this, position);
+    return mTriggerSystem.updateAgentPos(this, position);
 }
 
 

@@ -10,6 +10,7 @@
 
 #include <math/Vec2.h>
 #include <types/basics.h>
+#include <types/RefContainer.h>
 
 #include "TriggerSystemDefines.h"
 
@@ -19,7 +20,6 @@ namespace core {
 // Forward declarations
 //
 class TriggerSystem;
-class TriggerZone;
 
 class TriggerAgent
 {
@@ -35,7 +35,7 @@ public:
     // @brief Set the position of the agent (update its position)
     // @param position  The new position of the agent
     //
-    void
+    TriggerCode
     setPosition(const Vector2& position);
 
     // @brief Set/get the ID of the agent
@@ -74,7 +74,7 @@ private:
 
     // This members are used only by the TriggerSystem
     //
-    TriggerZone *closerZones[TS_NUM_COLORS+1];
+    RefContainer<core::uint16_t> closerZones;
     TriggerColor_t currentColors;
 
 };

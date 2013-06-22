@@ -9,6 +9,7 @@
 #ifndef VEC2_H_
 #define VEC2_H_
 
+#include <iostream>
 #include <cmath>
 
 //http://www.lomont.org/Math/Papers/2003/InvSqrt.pdf
@@ -226,6 +227,14 @@ struct Vector2
     rotateDegrees(float degrees)
     {
         return rotateRadians(DEG_TO_RAD_FAC * degrees);
+    }
+
+    // For debugging printing
+    //
+    inline friend std::ostream& operator<<(std::ostream& o, const Vector2& v)
+    {
+        o << "[" << v.x << ", " << v.y << "]";
+        return o;
     }
 };
 

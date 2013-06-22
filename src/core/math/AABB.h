@@ -9,6 +9,8 @@
 #ifndef AABB_H_
 #define AABB_H_
 
+#include <iostream>
+
 #include "Vec2.h"
 
 
@@ -34,8 +36,8 @@ struct AABB
     {
     }
     AABB(float top, float left, float bottom, float right) :
-        tl(Vector2(top, left))
-    ,   br(Vector2(bottom, right))
+        tl(Vector2(left, top))
+    ,   br(Vector2(right, bottom))
     {
     }
 
@@ -100,6 +102,13 @@ struct AABB
     {
         return !((o.br.x < tl.x) || (o.tl.x > br.x) || (o.tl.y < br.y)
             || (tl.y < o.br.y));
+    }
+
+    // For debugging printing
+    inline friend std::ostream& operator<<(std::ostream& o, const AABB& aabb)
+    {
+        o << "AABB(tl:" << aabb.tl << ", br: " << aabb.br << ")" << std::endl;
+        return o;
     }
 
 };
