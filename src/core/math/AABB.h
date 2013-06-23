@@ -104,6 +104,26 @@ struct AABB
             || (tl.y < o.br.y));
     }
 
+    // @brief Increase the size of the current bounding box to contain another
+    // @param other     The other bounding box to be contained
+    //
+    inline void
+    increaseToContain(const AABB& other)
+    {
+        if (other.tl.x < tl.x) {
+            tl.x = other.tl.x;
+        }
+        if (other.tl.y > tl.y) {
+            tl.y = other.tl.y;
+        }
+        if (other.br.x > br.x) {
+            br.x = other.br.x;
+        }
+        if (other.br.y < br.y) {
+            br.y = other.br.y;
+        }
+    }
+
     // For debugging printing
     inline friend std::ostream& operator<<(std::ostream& o, const AABB& aabb)
     {

@@ -13,6 +13,7 @@ namespace core {
 
 TriggerAgent::TriggerAgent(TriggerSystem& ts) :
     mTriggerSystem(ts)
+,   lastCellID(~0)
 ,   currentColors(0)
 {
 }

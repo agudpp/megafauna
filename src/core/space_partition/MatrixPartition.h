@@ -33,6 +33,11 @@ public:
     inline void
     construct(core::size_t numColumns, core::size_t numRows, const AABB& aabb);
 
+    // @brief Destroy the matrix contents
+    //
+    inline void
+    destroy(void);
+
     // @brief Return the number of rows and columns
     //
     inline core::size_t
@@ -82,6 +87,27 @@ public:
     inline CellType&
     getCell(const Vector2& position);
 
+    // @brief Get the associated cells pointers that intersects a given AABB
+    // @param aabb      The AABB of the query
+    // @param result    The list of CellType* that intersect with AABB
+    //
+    inline void
+    getCells(const AABB& aabb, std::vector<CellType *>& result);
+
+    // @brief Check if a cell id is valid
+    // @param index   The index of the cell to be checked
+    //
+    inline bool
+    isIndexValid(core::size_t index) const;
+
+private:
+    // @brief Helper method to get clamped X and Y position from a given x/y value
+    //
+    inline core::size_t
+    getClampedX(float x) const;
+    inline core::size_t
+    getClampedY(float y) const;
+
 private:
     AABB mBoundingBox;
     core::size_t mNumRows;
@@ -95,6 +121,31 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 // Inline stuff
 //
+
+template<typename CellType>
+inline core::size_t
+MatrixPartition<CellType>::getClampedX(float x) const
+{
+    return (x <= mBoundingBox.tl.x ? 0 :
+            x >= mBoundingBox.br.x ? mNumRows - 1 :
+            static_cast<core::size_t>((x - mBoundingBox.tl.x) * mInvXFactor));
+}
+template<typename CellType>
+inline core::size_t
+MatrixPartition<CellType>::getClampedY(float y) const
+{
+    return (y >= mBoundingBox.tl.y ? mNumRows -1 :
+            y <= mBoundingBox.br.y ? 0 :
+            static_cast<core::size_t>((y - mBoundingBox.br.y) * mInvYFactor));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+template<typename CellType>
+inline void
+MatrixPartition<CellType>::destroy(void)
+{
+    mMatrix.clear();
+}
 
 template<typename CellType>
 inline void
@@ -183,12 +234,8 @@ MatrixPartition<CellType>::getCell(const Vector2& position) const
 {
     // translate positions inside of our coordinate system and multiply by the
     // factor to get the index directly
-    const core::size_t row = position.x <= mBoundingBox.tl.x ? 0 :
-        position.x >= mBoundingBox.br.x ? mNumRows - 1 :
-            static_cast<core::size_t>((position.x - mBoundingBox.tl.x) * mInvXFactor);
-    const core::size_t col = position.y >= mBoundingBox.tl.y ? mNumRows -1 :
-        position.y <= mBoundingBox.br.y ? 0 :
-            static_cast<core::size_t>((position.y - mBoundingBox.br.y) * mInvYFactor);
+    const core::size_t row = getClampedX(position.x);
+    const core::size_t col = getClampedY(position.y);
 
     ASSERT(row < mNumRows);
     ASSERT(col < mNumColumns);
@@ -202,17 +249,47 @@ MatrixPartition<CellType>::getCell(const Vector2& position)
 {
     // translate positions inside of our coordinate system and multiply by the
     // factor to get the index directly
-    const core::size_t row = position.x <= mBoundingBox.tl.x ? 0 :
-        position.x >= mBoundingBox.br.x ? mNumRows - 1 :
-            static_cast<core::size_t>((position.x - mBoundingBox.tl.x) * mInvXFactor);
-    const core::size_t col = position.y >= mBoundingBox.tl.y ? mNumRows -1 :
-        position.y <= mBoundingBox.br.y ? 0 :
-            static_cast<core::size_t>((position.y - mBoundingBox.br.y) * mInvYFactor);
+    const core::size_t row = getClampedX(position.x);
+    const core::size_t col = getClampedY(position.y);
 
     ASSERT(row < mNumRows);
     ASSERT(col < mNumColumns);
 
     return getCell(row, col);
+}
+
+template<typename CellType>
+inline void
+MatrixPartition<CellType>::getCells(const AABB& aabb, std::vector<CellType *>& result)
+{
+    result.clear();
+    // do fast check first
+    if (!aabb.collide(mBoundingBox)) {
+        return;
+    }
+
+    // we can ensure that we have a intersection, get the x ranges and y ranges
+    core::size_t rowBegin = getClampedX(aabb.tl.x),
+                 rowEnd = getClampedX(aabb.br.x),
+                 colBegin = getClampedY(aabb.br.y),
+                 colEnd = getClampedY(aabb.tl.y);
+
+    // we will not reserve space for the result since we assume that the vector
+    // was used before and already contains sufficient space to allocate this
+
+    // TODO: optimize this
+    for (; rowBegin <= rowEnd; ++rowBegin) {
+        for (core::size_t col = colBegin; col <= colEnd; ++col) {
+            result.push_back(&getCell(rowBegin, col));
+        }
+    }
+}
+
+template<typename CellType>
+inline bool
+MatrixPartition<CellType>::isIndexValid(core::size_t index) const
+{
+    return index < mMatrix.size();
 }
 
 } /* namespace core */

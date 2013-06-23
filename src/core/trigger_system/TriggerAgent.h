@@ -72,9 +72,10 @@ private:
     core::uint16_t mID;
     core::uint16_t mMask;
 
+private:
     // This members are used only by the TriggerSystem
     //
-    RefContainer<core::uint16_t> closerZones;
+    core::uint16_t lastCellID;
     TriggerColor_t currentColors;
 
 };

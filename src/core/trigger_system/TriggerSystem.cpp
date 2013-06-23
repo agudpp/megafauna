@@ -9,175 +9,121 @@
 
 #include "GraphColoringHelper.h"
 
-////////////////////////////////////////////////////////////////////////////
-//
-namespace {
-////////////////////////////////////////////////////////////////////////////
-// coloring helpers methods
-
-// possible Colors
-static core::TriggerColor_t COLOR_BITS[TS_NUM_COLORS] = {
-    (1 << 0), (1 << 1), (1 << 2), (1 << 3), (1 << 4), (1 << 5), (1 << 6), (1 << 7),
-    (1 << 8), (1 << 9), (1 << 10), (1 << 11), (1 << 12), (1 << 13), (1 << 14), (1 << 15),
-    (1 << 16), (1 << 17), (1 << 18), (1 << 19), (1 << 20), (1 << 21), (1 << 22), (1 << 23),
-    (1 << 24), (1 << 25), (1 << 26), (1 << 27), (1 << 28), (1 << 29), (1 << 30),
-    static_cast<core::TriggerColor_t>(1 << 31)
-};
-
-}
 
 
 namespace core {
-
-
-// Get a new empty color from a node (checking the adjacencies)
-core::TriggerColor_t
-TriggerSystem::getColor(const core::TriggerSystem::ZoneNode& node)
-{
-    const core::TriggerSystem::ZoneNodePtrVec& neighbors = node.neighbors;
-    ASSERT(neighbors.size() < TS_NUM_COLORS);
-    core::TriggerColor_t accumColor = 0;
-    for (core::size_t i = 0; i < neighbors.size(); ++i) {
-        accumColor |= neighbors[i]->color;
-    }
-
-    // get the first free color
-    for (core::size_t i = 0; i < TS_NUM_COLORS; ++i) {
-        if (!(COLOR_BITS[i] & accumColor)) {
-            return COLOR_BITS[i];
-        }
-    }
-    // no color found!?
-    ASSERT(false);
-    return 0;
-}
-
-////////////////////////////////////////////////////////////////////////////
-void
-TriggerSystem::getZonesFromPosition(const Vector2& pos, ZoneNodePtrVec& zones) const
-{
-    debugOPTIMIZATION("Really slow, change this and use KD-trees or some other"
-        " partition space structure\n");
-
-    zones.clear();
-    for (core::size_t i = 0, size = mZoneNodesSize; i < size; ++i) {
-        if (mZoneNodes[i].zone.isPointInside(pos)) {
-            zones.push_back(&(mZoneNodes[i]));
-        }
-    }
-}
 
 ////////////////////////////////////////////////////////////////////////////
 TriggerCode
 TriggerSystem::initialize(TriggerAgent* agent)
 {
     ASSERT(agent);
-
-    if (!agent->closerZones.empty()) {
-        return TriggerCode::AlreadyInitialized;
+    if (!mMatrix.isBuilt()) {
+        debugERROR("We are trying to initialize an agent but the system is not "
+            "already built\n");
+        return TriggerCode::SystemNotBuilt;
     }
 
-    // get the possible zones
-    getZonesFromPosition(agent->position(), mZoneNodePtrs);
-    if (mZoneNodePtrs.empty()) {
-        // the agent is nowhere, we will return an error
+    const Vector2& agentPos = agent->position();
+    // check if the position of the agent is inside of our world
+    if (!mMatrix.isPositionInside(agentPos)) {
+        debugWARNING("You are trying to initialize the agent %u outside of the "
+            "bounds: (%f, %f)\n", agent->id(), agentPos.x, agentPos.y);
         return TriggerCode::UnreachablePosition;
     }
 
-    // else set the zones
-    RefContainer<core::uint16_t>& closerZones = agent->closerZones;
-    for (core::size_t i = 0, size = mZoneNodePtrs.size(); i < size; ++i) {
-        closerZones.addElement(mZoneNodePtrs[i]->id);
-    }
-    return TriggerCode::Ok;
+    // get the associated cell and check for the elements that intersect our position
+    const TriggerMatrix::Cell& cell = mMatrix.getCell(agentPos);
+    cell.getElementsInPosition(agentPos, mCellElements);
 
-}
+    // iterate over each one of the zones and call its callbacks and configure
+    // the color of the agent
+    TriggerColor_t& currentColors = agent->currentColors;
+    currentColors = 0;
+    agent->lastCellID = cell.id;
 
-////////////////////////////////////////////////////////////////////////////
-bool
-TriggerSystem::coloringTheGraph(void)
-{
-    if (mZoneNodesSize == 0) {
-        debugWARNING("Trying to color a empty graph\n");
-        return false;
-    }
-
-    // construct the Adjacency matrix used
-    GraphColoringHelper::AdjacencyMatrix matrix;
-    matrix.setNumberNodes(mZoneNodesSize);
-
-    for (core::size_t i = 0; i < mZoneNodesSize; ++i) {
-        const core::size_t currentId = mZoneNodes[i].id;
-
-        ZoneNodePtrVec& neighbors = mZoneNodes[i].neighbors;
-        for (core::size_t j = 0, size = neighbors.size(); j < size; ++j) {
-            const core::size_t neighborId = neighbors[j]->id;
-            ASSERT(neighborId != currentId);
-
-            // configure the matrix
-            matrix.set(currentId, neighborId, true);
+    for (core::size_t i = 0, size = mCellElements.size(); i < size; ++i) {
+        TriggerMatrix::CellElement& element = *mCellElements[i];
+        if (element.zoneElement.zone.isPointInside(agentPos)) {
+            // entering in a new zone
+            currentColors |= element.color;
+            element.zoneElement.callbacks(EventInfo(EventType::Entering,
+                                                    element.zoneElement.id,
+                                                    *agent));
         }
     }
 
-    // now get the number of colors for the different zones
-    std::vector<int> colors;
-    int numColors = GraphColoringHelper::graphColoring(matrix, colors);
-    if (numColors > TS_NUM_COLORS) {
-        debugERROR("We couldn't color the graph with less than %d colors, we got "
-            "%d colors\n", TS_NUM_COLORS, numColors);
-        return false;
-    }
+    return TriggerCode::Ok;
+}
 
-    // now that we could color the graph we will assign the colors to the different
-    // zones.
-    // TODO: This is very inefficient! but is called only once in the beginning
-    //       we can let this to the future
-    for (core::size_t j = 0, count = colors.size(); j < count; ++j) {
-        const TriggerColor_t currentColor = COLOR_BITS[colors[j]];
+////////////////////////////////////////////////////////////////////////////
+TriggerCode
+TriggerSystem::remapAgentToNewCell(TriggerAgent* agent) const
+{
+    ASSERT(agent);
 
-        // find the zone with id j
-        for (core::size_t i = 0; i < mZoneNodesSize; ++i) {
-            const core::size_t currentId = mZoneNodes[i].id;
-            if (currentId == j) {
-                // we found the zone, set the color
-                mZoneNodes[i].color = currentColor;
-                break;
+    const Vector2& newPos = agent->position();
+    const TriggerMatrix::Cell& newCell = mMatrix.getCell(newPos);
+    ASSERT(agent->lastCellID != newCell.id);
+    const TriggerMatrix::Cell& oldCell = mMatrix.getCell(agent->lastCellID);
+
+    // check which are the zones that we are just not inside anymore
+    TriggerColor_t newColor = 0;
+    const TriggerColor_t& agentColor = agent->currentColors;
+
+    TriggerMatrix::CellElementVec& oldElements = oldCell.elements;
+    for (core::size_t i = 0, size = oldElements.size(); i < size; ++i) {
+        const TriggerMatrix::CellElement& element = oldElements[i];
+        if (element.color & agentColor) {
+            // this one was a zone that was handled by the agent in the last
+            // call to updatePosition()... we need to check if we are still inside
+            if (!element.zoneElement.zone.isPointInside(newPos)) {
+                // we are outside, call the callback for this one
+                element.zoneElement.callbacks(EventInfo(EventType::Leaving,
+                                                        element.zoneElement.id,
+                                                        *agent));
+            } else {
+                // we are still inside, we need to remap it to the new color
+                TriggerMatrix::CellElement* newElem =
+                    newCell.findElementByZoneID(element.zoneElement.id);
+                ASSERT(newElem);
+                newColor |= newElem->color;
             }
         }
     }
 
-#ifdef DEBUG
-    // double checking for adjacent zones
-    for (core::size_t i = 0; i < mZoneNodesSize; ++i) {
-        const TriggerColor_t currentColor = mZoneNodes[i].color;
+    // now check for the new possible zones ONLY in the new cell
+    TriggerMatrix::CellElementVec& newElements = newCell.elements;
+    for (core::size_t i = 0, size = newElements.size(); i < size; ++i) {
+        const TriggerMatrix::CellElement& element = newElements[i];
 
-        ZoneNodePtrVec& neighbors = mZoneNodes[i].neighbors;
-        for (core::size_t j = 0, size = neighbors.size(); j < size; ++j) {
-            const TriggerColor_t neighborColor = neighbors[j]->color;
-            ASSERT(neighborColor != currentColor);
+        // we need to check if there are a new zone that we are not tracking
+        if ((newColor & element.color) == 0 &&
+            element.zoneElement.zone.isPointInside(newPos)) {
+            // new zone to track
+            newColor |= element.color;
+            element.zoneElement.callbacks(EventInfo(EventType::Entering,
+                                                    element.zoneElement.id,
+                                                    *agent));
         }
     }
+    // update the agent information
+    agent->lastCellID = newCell.id;
+    agent->currentColors = newColor;
 
-#endif
-
-    // everything is ok, nodes colored fine
-    return true;
+    return TriggerCode::Ok;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
-TriggerSystem::TriggerSystem() :
-    mZoneNodes(0)
-,   mZoneNodesSize(0)
+TriggerSystem::TriggerSystem()
 {
+    mCellElements.reserve(TS_NUM_COLORS); // just in case
 }
 
 ////////////////////////////////////////////////////////////////////////////
 TriggerSystem::~TriggerSystem()
 {
-    delete []mZoneNodes;
-    mZoneNodesSize = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -239,88 +185,68 @@ TriggerSystem::updateAgentPos(TriggerAgent* agent, const Vector2& pos)
 
     // update the position of the agent
     agent->mPosition = pos;
+    TriggerColor_t& oldColors = agent->currentColors;
 
-    // first check for "leaving" zones, then for entering zones.
-    RefContainer<core::uint16_t>& closerZones = agent->closerZones;
-    TriggerColor_t agentColor = agent->currentColors;
-    TriggerColor_t currentColors = 0;
-
-    debugBLUE("CloserZones: %ul\n", closerZones.size());
-
-    for (core::size_t i = 0, size = closerZones.size(); i < size; ++i) {
-        ASSERT(closerZones[i] < mZoneNodesSize);
-        ZoneNode& node = mZoneNodes[closerZones[i]];
-
-        if (node.zone.isPointInside(pos)) {
-            currentColors |= node.color;
-            debugBLUE("Inside: %u\n", node.id);
-
-            // the player is inside of this zone, check if we was before
-            if (node.color & agentColor) {
-                // we still inside of the same zone, do nothing
-            } else {
-                // we are entering in a new zone! call the callbacks
-                node.callbacks(EventInfo(EventType::Entering, node.id, *agent));
-
-                // add new possible neighbors for this node
-                ZoneNodePtrVec& neighbors = node.neighbors;
-                for (core::size_t j = 0, count = neighbors.size(); j < count; ++j) {
-                    closerZones.addElement(neighbors[i]->id);
+    // check if we are outside of the target map
+    if (!mMatrix.isPositionInside(pos)) {
+        // need to clear all the zones and clear the agent
+        if (mMatrix.isIndexValid(agent->lastCellID) && oldColors != 0) {
+            // we was in a valid cell, get the cell and clean up
+            const TriggerMatrix::Cell& oldCell = mMatrix.getCell(agent->lastCellID);
+            for (core::size_t i = 0, size = oldCell.elements.size(); i < size; ++i) {
+                TriggerMatrix::CellElement& element = oldCell.elements[i];
+                if (element.color & oldColors) {
+                    // we was on this cell before, call the callbacks for this one
+                    element.zoneElement.callbacks(EventInfo(EventType::Leaving,
+                                                            element.zoneElement.id,
+                                                            *agent));
                 }
+            }
+        }
+        oldColors = 0;
+        return TriggerCode::UnreachablePosition;
+    }
+
+    // we are inside of the normal zone... get the new cell position
+    const TriggerMatrix::Cell& cell = mMatrix.getCell(pos);
+
+    // check now if we are on a new cell
+    if (cell.id != agent->lastCellID) {
+        // we are in a new cell... remap stuff and return
+        return remapAgentToNewCell(agent);
+    }
+
+    // we are still in the same cell... do the usual checking
+    TriggerColor_t newColor = 0;
+    const TriggerMatrix::CellElementVec& elements = cell.elements;
+    for (core::size_t i = 0, size = elements.size(); i < size; ++i) {
+        const TriggerMatrix::CellElement& element = elements[i];
+
+        if (element.zoneElement.zone.isPointInside(pos)) {
+            newColor |= element.color;
+            // we are inside of this zone.. check  if we was inside before
+            if (!(element.color & oldColors)) {
+                // is a new one call the callbacks
+                element.zoneElement.callbacks(EventInfo(EventType::Entering,
+                                                        element.zoneElement.id,
+                                                        *agent));
             }
         } else {
-            debugBLUE("Outside: %u\n", node.id);
-            // we are not anymore in this zone... check if we was before
-            if (node.color & agentColor) {
-                // we was before, but now we leave it, send the event
-                node.callbacks(EventInfo(EventType::Leaving, node.id, *agent));
-
-                // remove the neighbors
-                ZoneNodePtrVec& neighbors = node.neighbors;
-                for (core::size_t j = 0, count = neighbors.size(); j < count; ++j) {
-                    closerZones.removeElement(neighbors[i]->id);
-                }
-            } else {
-                // do nothing..
+            // we are outside of this zone... check if we was before here
+            if (element.color & oldColors) {
+                // yeah! we was before here... call the leaving callback
+                element.zoneElement.callbacks(EventInfo(EventType::Leaving,
+                                                        element.zoneElement.id,
+                                                        *agent));
             }
         }
     }
 
-    agent->currentColors = currentColors;
-    // check if the agent is outside of all the closer zones (probably a big jump)
-    if (currentColors == 0 || closerZones.empty()) {
-        debugBLUE("currentColors: %u\n", currentColors);
-        // get the possible zones
-        getZonesFromPosition(agent->position(), mZoneNodePtrs);
-        if (mZoneNodePtrs.empty()) {
-            // the agent is nowhere, we will return an error
-            closerZones.clear();
-            return TriggerCode::UnreachablePosition;
-        }
+    // reassign the new colors
+    oldColors = newColor;
 
-        // else the agent is in a valid position but we did a big jump...
-        // we will set the new color for the agent, the closerZones and we will
-        // call the associated callbacks (this way we avoid to wait until the
-        // next updatePosition() call)
-        closerZones.clear();
-        currentColors = 0;
-        for (core::size_t i = 0, size = mZoneNodePtrs.size(); i < size; ++i) {
-            ASSERT(mZoneNodePtrs[i]);
-            ZoneNode& node = *(mZoneNodePtrs[i]);
-            ZoneNodePtrVec& neighbors = node.neighbors;
-            for (core::size_t j = 0, count = neighbors.size(); j < count; ++j) {
-                closerZones.addElement(neighbors[i]->id);
-            }
-
-            // call the associated callback
-            currentColors |= node.color;
-            node.callbacks(EventInfo(EventType::Entering, node.id, *agent));
-        }
-        return TriggerCode::BigJump;
-    }
-
-    // everything was ok
-    return TriggerCode::Ok;
+    // check if we are on an unreachable zone
+    return newColor == 0 ? TriggerCode::UnreachablePosition : TriggerCode::Ok;
 }
 
 
@@ -329,12 +255,11 @@ TriggerSystem::updateAgentPos(TriggerAgent* agent, const Vector2& pos)
 //
 
 
-TriggerSystem::Connection
-TriggerSystem::addCallback(core::uint16_t zoneID, const Signal::slot_type& subscriber)
+TriggerCallback::Connection
+TriggerSystem::addCallback(core::uint16_t zoneID,
+                           const TriggerCallback::Signal::slot_type& subscriber)
 {
-    ASSERT(zoneID < mZoneNodesSize);
-    ASSERT(zoneID == mZoneNodes[zoneID].id);
-    return mZoneNodes[zoneID].callbacks.connect(subscriber);
+    return mMatrix.getZoneElement(zoneID).callback.connect(subscriber);
 }
 
 ////////////////////////////////////////////////////////////////////////////

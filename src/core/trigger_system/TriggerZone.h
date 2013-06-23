@@ -52,6 +52,11 @@ public:
     inline void
     setZone(const TZType& zone);
 
+    // @brief Get the current zone
+    //
+    inline const TZType&
+    zone(void) const;
+
     // @brief Set / get the trigger mask. This trigger mask is used as a filter
     //        when checking for different agents (some triggers should be activated
     //        only for some agents, but not for others).
@@ -94,6 +99,12 @@ inline void
 TriggerZone::setZone(const TZType& zone)
 {
     mZone = zone;
+}
+
+inline const TZType&
+TriggerZone::zone(void) const
+{
+    return mZone;
 }
 
 inline core::uint16_t

@@ -9,7 +9,6 @@
 #define TRIGGERSYSTEM_H_
 
 
-#include <boost/signals.hpp>
 
 #include <memory>
 #include <vector>
@@ -19,6 +18,7 @@
 #include "TriggerZone.h"
 #include "TriggerAgent.h"
 #include "TriggerSystemDefines.h"
+#include "TriggerMatrix.h"
 
 namespace core {
 
@@ -41,10 +41,7 @@ public:
         const TriggerAgent& agent;
     };
 
-    // TODO: remove boost and use stl instead
-    // Each signal will receive a TriggerZone and an EventType
-    typedef boost::signal<void (const EventInfo&)> Signal;
-    typedef boost::signals::connection Connection;
+
 
 public:
     TriggerSystem();
@@ -106,8 +103,8 @@ public:
     // @param callback  The callback itself
     // @return the associated connection
     //
-    Connection
-    addCallback(core::uint16_t zoneID, const Signal::slot_type& subscriber);
+    TriggerCallback::Connection
+    addCallback(core::uint16_t zoneID, const TriggerCallback::Signal::slot_type& subscriber);
 
     // @brief Build the graph and the system. We will check for collisions between
     //        the zones and build the colored graph. This method is slow and will
@@ -138,24 +135,6 @@ private:
     //                      Helper classes and methods                        //
     //
 
-    class ZoneNode;
-    typedef std::vector<ZoneNode*> ZoneNodePtrVec;
-
-    struct ZoneNode {
-        TriggerZone zone;
-        ZoneNodePtrVec neighbors;
-        Signal callbacks;
-        TriggerColor_t color;
-        core::uint16_t id;
-    };
-
-    // @brief Get all the zones that intersects a specific position.
-    // @param pos   The position
-    // @param zones The resulting zones
-    //
-    void
-    getZonesFromPosition(const Vector2& pos, ZoneNodePtrVec& zones) const;
-
     // @brief Initialize the agent in its current position. We will find
     //        all the zones that matchs and set them as the closer zones
     // @param agent     The agent we want to initializate
@@ -163,24 +142,24 @@ private:
     TriggerCode
     initialize(TriggerAgent* agent);
 
-
-    // @brief Method for coloring the "graph" (that is the vector of ZoneNode).
+    // @brief Do a remap of an agent when moving into a new cell.
+    //        This function will call the callbacks for the old zones and for the
+    //        new ones too. And it will configure the agent with the new cell
+    //        and colors
+    // @param agent    The agent
+    // @return the associated triggerCode
     //
-    TriggerColor_t
-    getColor(const ZoneNode& node);
-    bool
-    coloringTheGraph(void);
+    TriggerCode
+    remapAgentToNewCell(TriggerAgent* agent) const;
 
 private:
     typedef std::vector<std::shared_ptr<TriggerAgent> > AgentPtrVec;
-    typedef std::vector<TriggerZone> TriggerZoneVec;
-    typedef std::vector<TriggerZone*> TriggerZonePtrVec;
+    typedef std::vector<TriggerMatrix::CellElement *> CellElementPtrVec;
 
-    ZoneNode* mZoneNodes;
-    core::size_t mZoneNodesSize;
+
     AgentPtrVec mAgents;
-    ZoneNodePtrVec mZoneNodePtrs;
-
+    TriggerMatrix mMatrix;
+    CellElementPtrVec mCellElements;
 };
 
 
@@ -213,7 +192,7 @@ TriggerSystem::getAgent(core::uint16_t id)
 inline bool
 TriggerSystem::isAlreadyBuilt(void) const
 {
-    return mZoneNodes != 0;
+    return mMatrix.isBuilt();
 }
 
 } /* namespace core */
