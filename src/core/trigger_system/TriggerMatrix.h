@@ -49,7 +49,7 @@ public:
         //
         inline void
         getElementsInPosition(const Vector2& position,
-                              std::vector<CellElement *>& result) const;
+                              std::vector<const CellElement *>& result) const;
 
         // @brief look for a CellElement by zone.id. If we found it we return
         //        the pointer to the associated CellElement, otherwise 0
@@ -103,6 +103,8 @@ public:
     //
     inline const Cell&
     getCell(const Vector2& pos) const;
+    inline Cell&
+    getCell(const Vector2& pos);
 
     // @brief Get a cell from a given id.
     // @param id   The index of the cell to be used
@@ -110,6 +112,8 @@ public:
     //
     inline const Cell&
     getCell(core::uint16_t id) const;
+    inline Cell&
+    getCell(core::uint16_t id);
 
     // @brief Check if a cell id is valid
     // @param id   The index of the cell to be checked
@@ -149,7 +153,7 @@ private:
 
 inline void
 TriggerMatrix::Cell::getElementsInPosition(const Vector2& position,
-                                           std::vector<CellElement *>& result) const
+                                           std::vector<const CellElement *>& result) const
 {
     result.clear();
     for (core::size_t i = 0, size = elements.size(); i < size; ++i) {
@@ -199,8 +203,18 @@ TriggerMatrix::getCell(const Vector2& pos) const
 {
     return mMatrix.getCell(pos);
 }
+inline TriggerMatrix::Cell&
+TriggerMatrix::getCell(const Vector2& pos)
+{
+    return mMatrix.getCell(pos);
+}
 inline const TriggerMatrix::Cell&
 TriggerMatrix::getCell(core::uint16_t id) const
+{
+    return mMatrix.getCell(id);
+}
+inline TriggerMatrix::Cell&
+TriggerMatrix::getCell(core::uint16_t id)
 {
     return mMatrix.getCell(id);
 }

@@ -19,10 +19,11 @@ namespace {
 // @return the bounding box that contains all the zones
 //
 core::AABB
-calculateBoundingBox(const std::vector<core::TriggerZone>& zones) const
+calculateBoundingBox(const std::vector<core::TriggerZone>& zones)
 {
-    core::AABB result;
-    for (core::size_t i = 0, size = zones.size(); i < size; ++i) {
+    ASSERT(!zones.empty());
+    core::AABB result = zones.front().zone();
+    for (core::size_t i = 1, size = zones.size(); i < size; ++i) {
         result.increaseToContain(zones[i].zone());
     }
     return result;
@@ -47,7 +48,7 @@ TriggerMatrix::TriggerMatrix() :
     mZoneElements(0)
 ,   mZoneElementSize(0)
 {
-    ASSERT(sizeof(COLOR_BITS)/sizeof(TriggerColor_t) == sizeof(TS_NUM_COLORS));
+    ASSERT(sizeof(COLOR_BITS)/sizeof(TriggerColor_t) == TS_NUM_COLORS);
 }
 
 TriggerMatrix::~TriggerMatrix()
@@ -77,7 +78,7 @@ TriggerMatrix::build(const std::vector<TriggerZone>& zones,
         "of indices for example... or calculating the best size for the matrix\n");
     mMatrix.construct(numCols, numRows, boundingBox);
 
-    ASSERT(mZoneElements);
+    ASSERT(mZoneElements == 0);
 
     mZoneElementSize = zones.size();
     mZoneElements = new ZoneElement[mZoneElementSize];
@@ -101,7 +102,7 @@ TriggerMatrix::build(const std::vector<TriggerZone>& zones,
     std::vector<Cell *> cells;
     cells.reserve(mZoneElementSize); // just in case
     for (core::size_t i = 0; i < mZoneElementSize; ++i) {
-        const ZoneElement& zoneElement = mZoneElements[i];
+        ZoneElement& zoneElement = mZoneElements[i];
 
         // get the cells that intersect with the current zone
         mMatrix.getCells(zoneElement.zone.zone(), cells);
@@ -131,6 +132,9 @@ TriggerMatrix::build(const std::vector<TriggerZone>& zones,
             elements[j].color = COLOR_BITS[j];
         }
     }
+
+    // everything ok
+    return true;
 }
 
 } /* namespace core */

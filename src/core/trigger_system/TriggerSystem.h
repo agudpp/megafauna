@@ -25,25 +25,6 @@ namespace core {
 class TriggerSystem
 {
 public:
-    // Define the callbacks interface
-    enum EventType {
-        Entering,       // when we are entering the zone
-        Leaving,        // when we are leaving the zone
-    };
-
-    struct EventInfo {
-        EventInfo(EventType t, core::uint16_t z, const TriggerAgent& a) :
-            type(t), zoneID(z), agent(a)
-        {}
-
-        EventType type;
-        core::uint16_t zoneID;
-        const TriggerAgent& agent;
-    };
-
-
-
-public:
     TriggerSystem();
     ~TriggerSystem();
 
@@ -146,15 +127,16 @@ private:
     //        This function will call the callbacks for the old zones and for the
     //        new ones too. And it will configure the agent with the new cell
     //        and colors
-    // @param agent    The agent
+    // @param agent     The agent
+    // @param newCell   The new agent cell (getCell(agent->position());
     // @return the associated triggerCode
     //
     TriggerCode
-    remapAgentToNewCell(TriggerAgent* agent) const;
+    remapAgentToNewCell(TriggerAgent* agent, const TriggerMatrix::Cell& newCell) const;
 
 private:
     typedef std::vector<std::shared_ptr<TriggerAgent> > AgentPtrVec;
-    typedef std::vector<TriggerMatrix::CellElement *> CellElementPtrVec;
+    typedef std::vector<const TriggerMatrix::CellElement *> CellElementPtrVec;
 
 
     AgentPtrVec mAgents;
