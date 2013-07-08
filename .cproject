@@ -28,8 +28,9 @@
 									<listOptionValue builtIn="false" value="/usr/include/ois"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/megafauna/src/megafauna}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/megafauna/src/tools}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/megafauna/src/ui}&quot;"/>
 								</option>
-								<option id="gnu.cpp.compiler.option.preprocessor.def.1987188373" superClass="gnu.cpp.compiler.option.preprocessor.def" valueType="definedSymbols">
+								<option id="gnu.cpp.compiler.option.preprocessor.def.1987188373" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="DEBUG=1"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1241432002" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
