@@ -51,6 +51,10 @@ public:
     void
     moveCamera(const Ogre::Vector3 &dir);
 
+    // get the position of the camera
+    inline const Ogre::Vector3&
+    getCameraPosition(void) const;
+
 private:
     Ogre::Camera* mCamera;
     Ogre::SceneNode* mCamXNode;
@@ -94,9 +98,15 @@ OrbitCamera::setZoom(const Ogre::Real zoom)
     }
     Ogre::Vector3 posVec = mZoomNode->getPosition();
     posVec.normalise();
-    const Ogre::Real len = zoom * mStartDistance * 0.01f;
+    mZoom = (zoom <= 0) ? 0.01f : zoom;
+    const Ogre::Real len = mZoom * mStartDistance * 0.01f;
     mZoomNode->setPosition(posVec * len);
-    mZoom = zoom;
+}
+
+inline const Ogre::Vector3&
+OrbitCamera::getCameraPosition(void) const
+{
+    return mCamera->getRealPosition();
 }
 
 } /* namespace tool */

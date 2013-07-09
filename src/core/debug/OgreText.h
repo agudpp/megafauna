@@ -40,6 +40,7 @@ public:
                 "TextArea", szElement));
         panel->addChild(textArea);
         overlay->show();
+        setText("");
     }
     ~OgreText()
     {
@@ -75,7 +76,7 @@ public:
         textArea->setPosition(x, y);
     }
     void
-    setCol(float R, float G, float B, float I)
+    setColor(float R, float G, float B, float I)
     {
         textArea->setColour(Ogre::ColourValue(R, G, B, I));
     }

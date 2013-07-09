@@ -1,17 +1,18 @@
 /*
- * Test.h
+ * LodTester.h
  *
  *  Created on: 15/08/2011
  *      Author: agustin
  */
 
-#ifndef AnimPlayer_H_
-#define AnimPlayer_H_
+#ifndef LodTester_H_
+#define LodTester_H_
 
 #include <OgreSceneNode.h>
 #include <OgreAnimation.h>
 #include <OgreAnimationTrack.h>
 #include <OgreAnimationState.h>
+#include <OgreMesh.h>
 
 #include <vector>
 
@@ -21,12 +22,16 @@
 #include <types/basics.h>
 #include <utils/OrbitCamera.h>
 
+
+// The filename of the xml to be loaded
+#define LOD_XML_FILE "lod.xml"
+
 namespace tool {
 
-class AnimPlayer : public core::AppTester
+class LodTester : public core::AppTester
 {
 public:
-    AnimPlayer();
+    LodTester();
 
     /* Load additional info */
     void
@@ -36,29 +41,24 @@ public:
     void
     update();
 
-    ~AnimPlayer();
+    ~LodTester();
 
 private:
-    void
-    loadAnimations(void);
-    void
-    changeAnim(int i);
     void
     handleCameraInput(void);
 
+    bool
+    loadLODxml(Ogre::MeshPtr& resultMesh);
+
 private:
-    Ogre::SceneNode *node;
-    Ogre::Entity *ent;
-    std::vector<Ogre::AnimationState *> mAnims;
-    core::size_t mCurrentIndex;
+    Ogre::SceneNode *mNode;
+    Ogre::Entity *mEntity;
     Ogre::AnimationState *mActualAnim;
-    std::vector<Ogre::AnimationState *> mCamina;
     float mTimeFrame;
-    core::OgreText mAnimText;
-    core::OgreText mModelLoadedText;
     OrbitCamera mOrbitCamera;
+    core::OgreText mDistanceText;
 };
 
 }
 
-#endif /* AnimPlayer_H_ */
+#endif /* LodTester_H_ */

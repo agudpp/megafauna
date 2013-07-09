@@ -87,11 +87,27 @@ if (NOT OGRE_BUILD_PLATFORM_IPHONE)
 	set(OGRE_LIBRARIES ${OGRE_LIBRARIES} ${Boost_LIBRARIES})
 endif()
 
-
+################################################################################
+###             Check for local environment variables                        ###
+################################################################################
 set (DEV_ROOT_PATH $ENV{MEGAFAUNA_DEV_PATH})
+set (THIRD_PARTY_LIBS $ENV{MEGAFAUNA_THIRD_PARTY})
+
+if(NOT DEV_ROOT_PATH)
+  message(SEND_ERROR "you need to set MEGAFAUNA_DEV_PATH environment variable")
+endif()
+
+if(NOT THIRD_PARTY_LIBS)
+  message(SEND_ERROR "you need to set MEGAFAUNA_THIRD_PARTY environment variable")
+endif()
+
+# include third party libs and includes directories
+include_directories(${THIRD_PARTY_LIBS}/include)
+link_directories(${THIRD_PARTY_LIBS}/lib)
+
 
 ## Common flags
-add_definitions(-DDEBUG)
+add_definitions(-DDEBUG -g)
 add_definitions(-std=c++11)  # C++11 standard
 set(COMMON_LIBRARIES boost_signals boost_system)
 if(WIN32)

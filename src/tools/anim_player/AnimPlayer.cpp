@@ -14,8 +14,6 @@
 
 namespace tool {
 
-const Ogre::Real AnimPlayer::RANDOM_POSITION = 2000.0f;
-
 void
 AnimPlayer::loadAnimations(void)
 {

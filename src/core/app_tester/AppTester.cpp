@@ -144,7 +144,7 @@ AppTester::loadInitialConfig(bool showConfig)
     mWindow = mRoot->initialise(true, "AppTester Window");
 
     // creates a generic sceneManager
-    mSceneMgr = mRoot->createSceneManager(Ogre::ST_GENERIC);
+    mSceneMgr = mRoot->createSceneManager(Ogre::ST_EXTERIOR_FAR);
     if (!mSceneMgr) {
         debugERROR("Could not construct the SceneManager\n");
         return false;
@@ -336,6 +336,8 @@ AppTester::AppTester(float& globalTimeFrame,
 ,   mStopRunning(false)
 ,   mGlobalTimeFrame(globalTimeFrame)
 ,   mDisableInputGrabbing(disableInputGrabbing)
+,   mShowFPS(true)
+,   mFPSText(0)
 {
     loadInitialConfig(showConfig);
 
@@ -372,6 +374,12 @@ AppTester::AppTester(float& globalTimeFrame,
     Ogre::ResourceManager::ResourceMapIterator iter =
         Ogre::FontManager::getSingleton().getResourceIterator();
     while (iter.hasMoreElements()) { iter.getNext()->load(); }
+
+    // configure the text for the PFS
+    mFPSText = new OgreText;
+    mFPSText->setPos(0.0f, 0.97f);
+    mFPSText->setText("FPS: ");
+    mFPSText->setColor(1.f, 0.f, 0.f, 1.f);
 }
 
 /******************************************************************************/
@@ -385,6 +393,8 @@ AppTester::run()
 
     Ogre::Timer timer;
     float timeStamp = 0;
+    Ogre::Real accumTimer = 0.0f;
+    unsigned int numFrames = 0;
 
     // here is the main loop
     // TODO: fix the FrameElapsedTime and check how to get the ogres one.
@@ -410,6 +420,17 @@ AppTester::run()
 
         update();
 
+        // show the fps
+        if (mShowFPS) {
+            accumTimer += mGlobalTimeFrame;
+            ++numFrames;
+            if (accumTimer >= 1.f) {
+                mFPSText->setText("FPS: " + Ogre::StringConverter::toString(numFrames));
+                accumTimer = 0.f;
+                numFrames = 0;
+            }
+        }
+
         // This must be called when we use the renderOneFrame approach
         Ogre::WindowEventUtilities::messagePump();
 
@@ -429,6 +450,7 @@ AppTester::~AppTester()
         mInputManager->destroyInputObject(mMouse);
     }
     OIS::InputManager::destroyInputSystem(mInputManager);
+    delete mFPSText;
 }
 
 }
