@@ -23,6 +23,15 @@
 #include <cursor/MouseCursor.h>
 #include <utils/SelectionHelper.h>
 
+
+#define TRIGGER_ZONE_TOOL_FILE  "TriggerZone.xml"
+
+
+// forward
+//
+class TiXmlElement;
+
+
 namespace tool {
 
 class TriggerZone : public core::AppTester
@@ -42,6 +51,14 @@ public:
     ~TriggerZone();
 
 private:
+
+    // @brief Load the floor and the base plane using the xml file
+    // @param xml   The root xml element of the xml file
+    // @return true on success | false otherwise
+    //
+    bool
+    loadFloor(const TiXmlElement* xml);
+
     void
     loadAnimations(void);
     void
@@ -50,18 +67,12 @@ private:
     handleCameraInput(void);
 
 private:
-    Ogre::SceneNode *node;
-    Ogre::Entity *ent;
-    std::vector<Ogre::AnimationState *> mAnims;
-    core::size_t mCurrentIndex;
-    Ogre::AnimationState *mActualAnim;
-    std::vector<Ogre::AnimationState *> mCamina;
     float mTimeFrame;
     core::OgreText mAnimText;
     core::OgreText mModelLoadedText;
     OrbitCamera mOrbitCamera;
     ui::MouseCursor mMouseCursor;
-    SelectionHelper mSelectionHelper;
+    //SelectionHelper mSelectionHelper;
 };
 
 }

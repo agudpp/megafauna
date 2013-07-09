@@ -5,51 +5,74 @@
  *      Author: agustin
  */
 
+#include "TriggerZone.h"
+
+#include <memory>
+
 #include <OgreMath.h>
 #include <OgreAnimationState.h>
 #include <OgreResourceManager.h>
 #include <OgreFontManager.h>
+#include <OgreMeshManager.h>
+#include <OgreMaterialManager.h>
 
-#include "TriggerZone.h"
+#include <xml/XMLHelper.h>
+#include <tinyxml/tinyxml.h>
 
 namespace tool {
 
 const Ogre::Real TriggerZone::RANDOM_POSITION = 2000.0f;
 
-void
-TriggerZone::loadAnimations(void)
-{
-    Ogre::AnimationStateSet *allAnim = ent->getAllAnimationStates();
-    Ogre::AnimationStateIterator it = allAnim->getAnimationStateIterator();
 
-    while(it.hasMoreElements()){
-        Ogre::AnimationState *anim = it.getNext();
-        if (!anim) {
-            break;
-        }
-        mAnims.push_back(anim);
+
+////////////////////////////////////////////////////////////////////////////////
+bool
+TriggerZone::loadFloor(const TiXmlElement* xml)
+{
+    ASSERT(xml);
+
+    // get the xml
+    //<Floor materialName="floor_trigger_zone" sizeX="5000" sizeY="4000" />
+    //
+    const TiXmlElement* floor = xml->FirstChildElement("Floor");
+    if (!floor) {
+        debugWARNING("No floor set\n");
+        return false;
     }
-    mCurrentIndex = 0;
-    // set enable the current anim
-    mAnims.back()->setEnabled(true);
+
+    // get the material name and floor sizes
+    float sizeX, sizeY;
+    core::XMLHelper::parseFloat(floor, "sizeX", sizeX);
+    core::XMLHelper::parseFloat(floor, "sizeX", sizeY);
+
+    // get the material name
+    const char* matName = floor->Attribute("materialName");
+    if (!matName) {
+        debugWARNING("No material name was set\n");
+        return false;
+    }
+
+    // create the floor entity and node (we will leak here, is not important)
+    Ogre::Plane plane;
+    plane.normal = Ogre::Vector3::UNIT_Y;
+    plane.d = 0;
+
+    Ogre::MeshManager& mm = Ogre::MeshManager::getSingleton();
+    mm.createPlane("triggerFloor",
+                   Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
+                   plane,
+                   sizeX,
+                   sizeY);
+    Ogre::Entity* planeEnt = mSceneMgr->createEntity("triggerPlane", "triggerFloor");
+    planeEnt->setMaterialName(matName);
+    Ogre::SceneNode* planeNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
+    planeNode->attachObject(planeEnt);
+
+    return true;
 }
 
-void
-TriggerZone::changeAnim(int i)
-{
-    ASSERT(i < mAnims.size());
 
-    mActualAnim->setEnabled(false);
-    mActualAnim = mAnims[i];
-    mActualAnim->setTimePosition(0);
-    mActualAnim->setEnabled(true);
-
-    // update the text
-    if (mActualAnim != 0) {
-        mAnimText.setText("Animation: " + mActualAnim->getAnimationName());
-    }
-}
-
+////////////////////////////////////////////////////////////////////////////////
 void
 TriggerZone::handleCameraInput()
 {
@@ -136,6 +159,8 @@ TriggerZone::handleCameraInput()
 
 }
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 TriggerZone::TriggerZone() :
     core::AppTester(mTimeFrame)
 ,   mOrbitCamera(mCamera, mSceneMgr, mTimeFrame)
@@ -143,84 +168,36 @@ TriggerZone::TriggerZone() :
     setUseDefaultInput(false);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 TriggerZone::~TriggerZone()
 {
     // TODO Auto-generated destructor stub
 }
 
-/* Load additional info */
+////////////////////////////////////////////////////////////////////////////////
 void
 TriggerZone::loadAditionalData(void)
 {
-    ent = mSceneMgr->createEntity("gusanohi.mesh");
-    node = mSceneMgr->getRootSceneNode()->createChildSceneNode();
-    node->attachObject(ent);
-
-    loadAnimations();
-
-    // configure the text for ogre
-    mModelLoadedText.setPos(0.f, 0.f);
-    mAnimText.setPos(0.f, 0.05f);
-
-    // TODO: ugly way to load all the fonts at the beginning
-    Ogre::ResourceManager::ResourceMapIterator iter =
-        Ogre::FontManager::getSingleton().getResourceIterator();
-    while (iter.hasMoreElements()) { iter.getNext()->load(); }
-
-    mModelLoadedText.setText("EntityLoaded: " + ent->getName());
-    mActualAnim = mAnims.empty() ? 0 : mAnims[0];
-    if (mActualAnim == 0) {
-        mAnimText.setText("No animations found\n");
-    } else {
-        mAnimText.setText("Animation: " + mActualAnim->getAnimationName());
+    // load the xml
+    std::shared_ptr<TiXmlDocument> doc(core::XMLHelper::loadXmlDocument(TRIGGER_ZONE_TOOL_FILE));
+    if (doc.get() == 0) {
+        debugWARNING("Error loading file %s\n", TRIGGER_ZONE_TOOL_FILE);
+        return;
     }
+
+    // load the floor
+    if (!loadFloor(doc->RootElement())) {
+        debugWARNING("Some error occur when loading the floor\n");
+    }
+
+
 
 }
 
-/* function called every frame. Use GlobalObjects::lastTimeFrame */
+////////////////////////////////////////////////////////////////////////////////
 void
 TriggerZone::update()
 {
-    static bool keyNextPressed = false;
-    static bool keyBackPressed = false;
-
-    if (mKeyboard->isKeyDown(OIS::KC_ESCAPE)) {
-        // we have to exit
-        mStopRunning = true;
-    }
-
-    if (mActualAnim == 0) {
-        return;
-    }
-	mActualAnim->addTime(mGlobalTimeFrame);
-
-    if (mActualAnim->hasEnded()) {
-        // start the animation again
-        mActualAnim->setTimePosition(0.f);
-    }
-
-    // check for user input
-    if (mKeyboard->isKeyDown(OIS::KC_ADD)) {
-        if (!keyNextPressed) {
-            keyNextPressed = true;
-            // add one to the counter
-            mCurrentIndex = (mCurrentIndex + 1) % mAnims.size();
-            changeAnim(mCurrentIndex);
-        }
-    } else {
-        keyNextPressed = false;
-    }
-    if (mKeyboard->isKeyDown(OIS::KC_MINUS)) {
-        if (!keyBackPressed) {
-            keyBackPressed = true;
-            // decrement one to the counter
-            mCurrentIndex = (mCurrentIndex == 0) ? mAnims.size() - 1 : mCurrentIndex - 1;
-            changeAnim(mCurrentIndex);
-        }
-    } else {
-        keyBackPressed = false;
-    }
-
     handleCameraInput();
 
 }

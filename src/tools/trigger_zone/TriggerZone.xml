@@ -1,0 +1,3 @@
+<TriggerZoneTool>
+	<Floor materialName="floor_trigger_zone" sizeX="5000" sizeY="4000" />
+</TriggerZoneTool>
