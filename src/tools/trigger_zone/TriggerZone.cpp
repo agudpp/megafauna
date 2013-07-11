@@ -8,6 +8,7 @@
 #include "TriggerZone.h"
 
 #include <memory>
+#include <cmath>
 
 #include <OgreMath.h>
 #include <OgreAnimationState.h>
@@ -61,16 +62,43 @@ TriggerZone::loadFloor(const TiXmlElement* xml)
     mm.createPlane("triggerFloor",
                    Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
                    plane,
-                   sizeX,
-                   sizeY);
+                   sizeX, sizeY,
+                   20, 20,
+                   true,
+                   1,
+                   1, 1,
+                   Ogre::Vector3::UNIT_Z);
     Ogre::Entity* planeEnt = mSceneMgr->createEntity("triggerPlane", "triggerFloor");
     planeEnt->setMaterialName(matName);
     Ogre::SceneNode* planeNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
     planeNode->attachObject(planeEnt);
 
+    // move a little bit down to be able to show the zones above the floor
+    planeNode->translate(0, -5, 0);
+
+    mFloorAABB.tl.x = -sizeX * .5f;
+    mFloorAABB.tl.y = sizeY * .5f;
+    mFloorAABB.br.x = sizeX * .5f;
+    mFloorAABB.br.y = -sizeY * .5f;
+
     return true;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+void
+TriggerZone::configureCamera(void)
+{
+    // set the zone for where we will be moving on
+    Ogre::AxisAlignedBox moveZone(mFloorAABB.tl.x,
+                                  50,
+                                  mFloorAABB.br.y,
+                                  mFloorAABB.br.x,
+                                  std::max(mFloorAABB.getHeight(), mFloorAABB.getWidth()),
+                                  mFloorAABB.tl.y);
+    // configure the velocity taking into account the size of the level
+    mSatelliteCamera.configure(moveZone, 10);
+
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 void
@@ -80,7 +108,6 @@ TriggerZone::handleCameraInput()
     // CAMERA
     //  float lCoeff = 200.0f * Common::GlobalObjects::lastTimeFrame;
     Ogre::Vector3 mTranslationVec = Ogre::Vector3::ZERO;
-    Ogre::Real zoom = mOrbitCamera.zoom();
 
     // HERE WE DEFINE THE KEYS USED TO MOVE THE CAMERA, WE WILL USE THE
     // ARROWS TO MOVE THE CAMERA
@@ -93,68 +120,32 @@ TriggerZone::handleCameraInput()
     const OIS::MouseState& lMouseState = mMouse->getMouseState();
 
     if(mKeyboard->isKeyDown(OIS::KC_LEFT) || mKeyboard->isKeyDown(OIS::KC_A) ||
-            lMouseState.X.abs <= 0)
-    {
-        mTranslationVec.x -= 1.0f;
-    }
-    if(mKeyboard->isKeyDown(OIS::KC_RIGHT) || mKeyboard->isKeyDown(OIS::KC_D) ||
-            lMouseState.X.abs >= lMouseState.width)
-    {
+            lMouseState.X.abs <= 0) {
         mTranslationVec.x += 1.0f;
     }
-    if(mKeyboard->isKeyDown(OIS::KC_Q))
-    {
-        zoom += 0.5f;
-    }
-    if(mKeyboard->isKeyDown(OIS::KC_E))
-    {
-        zoom -= 0.5f;
-    }
-    if(mKeyboard->isKeyDown(OIS::KC_UP) || mKeyboard->isKeyDown(OIS::KC_W) ||
-            lMouseState.Y.abs <= 0)
-    {
-        mTranslationVec.z -= 1.0f;
-    }
-    if(mKeyboard->isKeyDown(OIS::KC_DOWN) || mKeyboard->isKeyDown(OIS::KC_S) ||
-            lMouseState.Y.abs >= lMouseState.height)
-    {
-        mTranslationVec.z += 1.0f;
+    if(mKeyboard->isKeyDown(OIS::KC_RIGHT) || mKeyboard->isKeyDown(OIS::KC_D) ||
+            lMouseState.X.abs >= lMouseState.width) {
+        mTranslationVec.x -= 1.0f;
     }
 
-    if(mTranslationVec != Ogre::Vector3::ZERO)
-    {
-        mOrbitCamera.moveCamera(mTranslationVec);
+    if(mKeyboard->isKeyDown(OIS::KC_UP) || mKeyboard->isKeyDown(OIS::KC_W) ||
+            lMouseState.Y.abs <= 0) {
+        mTranslationVec.z += 1.0f;
     }
-    if(zoom != mOrbitCamera.zoom()){
-        mOrbitCamera.setZoom(zoom);
+    if(mKeyboard->isKeyDown(OIS::KC_DOWN) || mKeyboard->isKeyDown(OIS::KC_S) ||
+            lMouseState.Y.abs >= lMouseState.height) {
+        mTranslationVec.z -= 1.0f;
     }
 
     const float lMouseZ = float(lMouseState.Z.rel);
-    float scrollZoom = mOrbitCamera.zoom();
     if (lMouseZ > 0.0f) {
-        scrollZoom += 5.f;
+        mTranslationVec.y += 10.f;
     } else if (lMouseZ < 0.0f) {
-        scrollZoom -= 5.f;
-    }
-    if(scrollZoom != mOrbitCamera.zoom()){
-        mOrbitCamera.setZoom(scrollZoom);
+        mTranslationVec.y -= 10.f;
     }
 
-    // check tracking camera
-    static int lastX = 0, lastY = 0;
-    const float lMouseX = float(lMouseState.X.rel);
-    const float lMouseY = float(lMouseState.Y.rel);
-    if(lMouseState.buttonDown(OIS::MB_Right)){
-        const float factor = -0.01 * 1.5f;
-        mOrbitCamera.rotateCamera(Ogre::Radian(lMouseX * factor),
-                                    Ogre::Radian(lMouseY * factor));
-    }
-
-    // check for the type of camera we want to use
-    if (mKeyboard->isKeyDown(OIS::KC_1)) {
-        mOrbitCamera.setCameraType(OrbitCamera::CameraType::FreeFly);
-    } else if (mKeyboard->isKeyDown(OIS::KC_2)) {
-        mOrbitCamera.setCameraType(OrbitCamera::CameraType::Orbit);
+    if(mTranslationVec != Ogre::Vector3::ZERO) {
+        mSatelliteCamera.translate(mTranslationVec * (200.f * mGlobalTimeFrame));
     }
 
 }
@@ -163,7 +154,7 @@ TriggerZone::handleCameraInput()
 ////////////////////////////////////////////////////////////////////////////////
 TriggerZone::TriggerZone() :
     core::AppTester(mTimeFrame)
-,   mOrbitCamera(mCamera, mSceneMgr, mTimeFrame)
+,   mSatelliteCamera(mCamera, mSceneMgr, mTimeFrame)
 {
     setUseDefaultInput(false);
 }
@@ -190,14 +181,19 @@ TriggerZone::loadAditionalData(void)
         debugWARNING("Some error occur when loading the floor\n");
     }
 
-
-
+    // configure the stallite camera
+    configureCamera();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 void
 TriggerZone::update()
 {
+    if (mKeyboard->isKeyDown(OIS::KC_ESCAPE)) {
+        // we have to exit
+        mStopRunning = true;
+    }
+
     handleCameraInput();
 
 }

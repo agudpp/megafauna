@@ -19,9 +19,10 @@
 #include <debug/DebugUtil.h>
 #include <debug/OgreText.h>
 #include <types/basics.h>
-#include <utils/OrbitCamera.h>
+#include <utils/SatelliteCamera.h>
 #include <cursor/MouseCursor.h>
 #include <utils/SelectionHelper.h>
+#include <math/AABB.h>
 
 
 #define TRIGGER_ZONE_TOOL_FILE  "TriggerZone.xml"
@@ -59,10 +60,11 @@ private:
     bool
     loadFloor(const TiXmlElement* xml);
 
+    // @brief Configure the camera to be used as Satellite mode
+    //
     void
-    loadAnimations(void);
-    void
-    changeAnim(int i);
+    configureCamera(void);
+
     void
     handleCameraInput(void);
 
@@ -70,9 +72,10 @@ private:
     float mTimeFrame;
     core::OgreText mAnimText;
     core::OgreText mModelLoadedText;
-    OrbitCamera mOrbitCamera;
+    SatelliteCamera mSatelliteCamera;
     ui::MouseCursor mMouseCursor;
     //SelectionHelper mSelectionHelper;
+    core::AABB mFloorAABB;
 };
 
 }
