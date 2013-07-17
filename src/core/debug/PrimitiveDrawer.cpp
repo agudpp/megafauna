@@ -34,7 +34,12 @@ Primitive::setColor(const Ogre::ColourValue& color)
 void
 Primitive::setAlpha(Ogre::Real alpha)
 {
-    ASSERT(false);
+    const Ogre::String& matName = (isManual) ? obj.manual->getSection(0)->getMaterialName() :
+        obj.ent->getSubEntity(0)->getMaterialName();
+    Ogre::MaterialPtr mat = Ogre::MaterialManager::getSingleton().getByName(matName);
+
+    const Ogre::ColourValue& diffuse = mat->getTechnique(0)->getPass(0)->getDiffuse();
+    mat->getTechnique(0)->getPass(0)->setDiffuse(diffuse.r, diffuse.g, diffuse.b, alpha);
 }
 
 
@@ -48,6 +53,8 @@ PrimitiveDrawer::PrimitiveDrawer() :
     // create base mat
     mBaseMat = Ogre::MaterialManager::getSingleton().create("PrimitiveDrawerBaseMat",
                                                             "General");
+    mBaseMat->getTechnique(0)->getPass(0)->setSceneBlending(
+            Ogre::SceneBlendType::SBT_TRANSPARENT_ALPHA);
 }
 
 PrimitiveDrawer::~PrimitiveDrawer()

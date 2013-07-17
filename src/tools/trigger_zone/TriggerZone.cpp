@@ -17,8 +17,13 @@
 #include <OgreMeshManager.h>
 #include <OgreMaterialManager.h>
 
+#include <OIS/OISMouse.h>
+
 #include <xml/XMLHelper.h>
 #include <tinyxml/tinyxml.h>
+#include <trigger_system/TriggerZone.h>
+
+#include "TZone.h"
 
 namespace tool {
 
@@ -119,21 +124,17 @@ TriggerZone::handleCameraInput()
     // MOUSE
     const OIS::MouseState& lMouseState = mMouse->getMouseState();
 
-    if(mKeyboard->isKeyDown(OIS::KC_LEFT) || mKeyboard->isKeyDown(OIS::KC_A) ||
-            lMouseState.X.abs <= 0) {
+    if(mKeyboard->isKeyDown(OIS::KC_LEFT) || mKeyboard->isKeyDown(OIS::KC_A)) {
         mTranslationVec.x += 1.0f;
     }
-    if(mKeyboard->isKeyDown(OIS::KC_RIGHT) || mKeyboard->isKeyDown(OIS::KC_D) ||
-            lMouseState.X.abs >= lMouseState.width) {
+    if(mKeyboard->isKeyDown(OIS::KC_RIGHT) || mKeyboard->isKeyDown(OIS::KC_D)) {
         mTranslationVec.x -= 1.0f;
     }
 
-    if(mKeyboard->isKeyDown(OIS::KC_UP) || mKeyboard->isKeyDown(OIS::KC_W) ||
-            lMouseState.Y.abs <= 0) {
+    if(mKeyboard->isKeyDown(OIS::KC_UP) || mKeyboard->isKeyDown(OIS::KC_W)) {
         mTranslationVec.z += 1.0f;
     }
-    if(mKeyboard->isKeyDown(OIS::KC_DOWN) || mKeyboard->isKeyDown(OIS::KC_S) ||
-            lMouseState.Y.abs >= lMouseState.height) {
+    if(mKeyboard->isKeyDown(OIS::KC_DOWN) || mKeyboard->isKeyDown(OIS::KC_S)) {
         mTranslationVec.z -= 1.0f;
     }
 
@@ -155,8 +156,12 @@ TriggerZone::handleCameraInput()
 TriggerZone::TriggerZone() :
     core::AppTester(mTimeFrame)
 ,   mSatelliteCamera(mCamera, mSceneMgr, mTimeFrame)
+,   mSelectionHelper(*mSceneMgr, *mCamera, mMouseCursor)
 {
     setUseDefaultInput(false);
+    mMouseCursor.setCursor(ui::MouseCursor::Cursor::NORMAL_CURSOR);
+    mMouseCursor.setVisible(true);
+    mMouseCursor.setWindowDimensions(mWindow->getWidth(), mWindow->getHeight());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -183,6 +188,14 @@ TriggerZone::loadAditionalData(void)
 
     // configure the stallite camera
     configureCamera();
+
+
+    // TODO: remove this, is just for test
+    core::TriggerZone tz;
+    tz.setZone(core::TZType(100,100, 0, 500));
+    SelectableObject* zone = new TZone(tz, Ogre::ColourValue::Green);
+    tz.setZone(core::TZType(500, 400, 20, 800));
+    SelectableObject* zone2 = new TZone(tz, Ogre::ColourValue::Red);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -194,6 +207,13 @@ TriggerZone::update()
         mStopRunning = true;
     }
 
+    // update mouse cursor
+    const OIS::MouseState& lMouseState = mMouse->getMouseState();
+    mMouseCursor.updatePosition(lMouseState.X.abs, lMouseState.Y.abs);
+
+    mSelectionHelper.update(lMouseState);
+
+    // update camera
     handleCameraInput();
 
 }

@@ -74,7 +74,7 @@ private:
     core::OgreText mModelLoadedText;
     SatelliteCamera mSatelliteCamera;
     ui::MouseCursor mMouseCursor;
-    //SelectionHelper mSelectionHelper;
+    SelectionHelper mSelectionHelper;
     core::AABB mFloorAABB;
 };
 

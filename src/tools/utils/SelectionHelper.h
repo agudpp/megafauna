@@ -44,9 +44,15 @@ public:
     //        object pointing to this object. If a scene node hasn't userDefined
     //        object will be discarded.
     //
-    SelectableObject(Ogre::SceneNode* node);
+    SelectableObject(Ogre::SceneNode* node = 0);
     virtual
     ~SelectableObject(){}
+
+    // @brief Set the SceneNode used by this object
+    // @param node  The node to be associated to this object
+    //
+    void
+    setSceneNode(Ogre::SceneNode* node);
 
     // @brief Method called when we pass the mouse over the object
     //
@@ -58,7 +64,7 @@ public:
     virtual void
     mouseExit(void) = 0;
 
-    // @brief Method called when the object is clicked (or selected)
+    // @brief Method called when the object is selected
     // @param type  Determines the selection type (button of the mouse)
     // @return true if the object should be selected or false if not. if we
     //         return false the object will be not took into account as if was
@@ -66,7 +72,7 @@ public:
     //         we will track it as a selected object.
     //
     virtual bool
-    objectClicked(SelectType type) = 0;
+    objectSelected(SelectType type) = 0;
 
     // @brief Method called when the object is unselected
     //
@@ -119,12 +125,13 @@ public:
     void
     getSelected(std::vector<SelectableObject*>& selected);
 
-    // @brief Select a new object (this will not call the objectClicked method,
-    //        but will call the objectUnselected() when necessary).
+    // @brief Select a new object (this will call the objectClicked method with,
+    //        the associated type and call the objectUnselected() when necessary).
     // @param object    The selectable object to be added as selected.
+    // @param type      The selection type to be used when we call objectClicked();
     //
     void
-    select(SelectableObject* object);
+    select(SelectableObject* object, SelectType type = SelectType::LeftButton);
 
     // @brief Check if an object is already selected
     // @param object    The object we want to check

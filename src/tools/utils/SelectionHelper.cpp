@@ -17,7 +17,17 @@ namespace tool {
 SelectableObject::SelectableObject(Ogre::SceneNode* node) :
     mNode(node)
 {
-    ASSERT(mNode);
+    if (mNode != 0) {
+        Ogre::UserObjectBindings& binding = mNode->getUserObjectBindings();
+        binding.setUserAny(Ogre::Any(this));
+    }
+}
+
+void
+SelectableObject::setSceneNode(Ogre::SceneNode* node)
+{
+    ASSERT(node);
+    mNode = node;
     Ogre::UserObjectBindings& binding = mNode->getUserObjectBindings();
     binding.setUserAny(Ogre::Any(this));
 }
@@ -55,8 +65,14 @@ SelectionHelper::performRaycast()
         return 0;
     }
 
+    const Ogre::Any& any = node->getUserObjectBindings().getUserAny();
+    if (any.isEmpty()) {
+        // is not one of our objects
+        return 0;
+    }
+
     // return the object if is a selectable one
-    return Ogre::any_cast<SelectableObject*>(node->getUserObjectBindings().getUserAny());
+    return Ogre::any_cast<SelectableObject*>(any);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -87,12 +103,31 @@ SelectionHelper::update(const OIS::MouseState& mouseState)
     // get the current position
     const Ogre::Vector2 currentPos(mMouseCursor.getXRelativePos(),
                                    mMouseCursor.getYRelativePos());
+    const bool leftButtonPressed = mouseState.buttonDown(OIS::MouseButtonID::MB_Left);
 
     // check if we are in the same position (and assuming that nothing is
     // moving)
     if (currentPos == mLastMousePos) {
+        // check if we click
+        if (leftButtonPressed) {
+            if (mLastRaycasted == 0) {
+                // no element raycasted, unselect all and return
+                unselectAll();
+            } else {
+                // some object was raycasted
+
+                // we are only allowing to select one object per time using the
+                // mouse and this way (in the update).
+                // We can select multiple objects outside this class getting the
+                // last selectable object
+                if (!isSelected(mLastRaycasted)) {
+                    unselectAll();
+                    select(mLastRaycasted, SelectType::LeftButton);
+                }
+            }
+        }
         // do nothing, no new object intersected
-        return 0;
+        return mLastRaycasted;
     }
 
     // update the new position
@@ -105,7 +140,15 @@ SelectionHelper::update(const OIS::MouseState& mouseState)
         // no new object raycasted, if we had object raycasted before we need
         // to advise it
         if (newObjectRaycasted == mLastRaycasted) {
-            // is the same than before, do nothing and return
+            // is the same than before, check if we have need to select it
+            if (leftButtonPressed) {
+                // check if we have to select the new raycasted object
+                if (!isSelected(newObjectRaycasted)) {
+                    unselectAll();
+                    // yes we need
+                    select(newObjectRaycasted, SelectType::LeftButton);
+                }
+            }
             return 0;
         }
 
@@ -120,6 +163,11 @@ SelectionHelper::update(const OIS::MouseState& mouseState)
         // we have no object raycasted... check if we had one before
         if (mLastRaycasted != 0) {
             mLastRaycasted->mouseExit();
+        }
+
+        // if we press the button we need to unselect everything
+        if (leftButtonPressed) {
+            unselectAll();
         }
     }
 
@@ -143,7 +191,7 @@ SelectionHelper::getSelected(std::vector<SelectableObject*>& selected)
 
 ////////////////////////////////////////////////////////////////////////////////
 void
-SelectionHelper::select(SelectableObject* object)
+SelectionHelper::select(SelectableObject* object, SelectType type)
 {
     ASSERT(object);
 
@@ -152,6 +200,13 @@ SelectionHelper::select(SelectableObject* object)
         // do nothing
         return;
     }
+
+    if (!object->objectSelected(type)) {
+        // we should not track this object.
+        return;
+    }
+    mLastSelection = object;
+
     // else add it to the list
     object->id = mSelectedObjects.size();
     mSelectedObjects.push_back(object);
@@ -170,6 +225,10 @@ SelectionHelper::unselect(SelectableObject* object)
     mSelectedObjects[object->id] = mSelectedObjects.back();
     mSelectedObjects[object->id]->id = object->id;
     mSelectedObjects.pop_back();
+
+    if (mLastSelection == object) {
+        mLastSelection = 0;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -179,6 +238,7 @@ SelectionHelper::unselectAll(void)
     for (core::size_t i = 0, size = mSelectedObjects.size(); i < size; ++i) {
         mSelectedObjects[i]->objectUnselected();
     }
+    mLastSelection = 0;
     mSelectedObjects.clear();
 }
 
