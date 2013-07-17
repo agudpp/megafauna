@@ -91,6 +91,13 @@ TriggerZone::loadFloor(const TiXmlElement* xml)
 
 ////////////////////////////////////////////////////////////////////////////////
 void
+TriggerZone::createZone(void)
+{
+    ASSERT(false); // TODO
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void
 TriggerZone::configureCamera(void)
 {
     // set the zone for where we will be moving on
@@ -157,6 +164,7 @@ TriggerZone::TriggerZone() :
     core::AppTester(mTimeFrame)
 ,   mSatelliteCamera(mCamera, mSceneMgr, mTimeFrame)
 ,   mSelectionHelper(*mSceneMgr, *mCamera, mMouseCursor)
+,   mState(InternalState::S_Normal)
 {
     setUseDefaultInput(false);
     mMouseCursor.setCursor(ui::MouseCursor::Cursor::NORMAL_CURSOR);
@@ -196,6 +204,7 @@ TriggerZone::loadAditionalData(void)
     SelectableObject* zone = new TZone(tz, Ogre::ColourValue::Green);
     tz.setZone(core::TZType(500, 400, 20, 800));
     SelectableObject* zone2 = new TZone(tz, Ogre::ColourValue::Red);
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -211,7 +220,20 @@ TriggerZone::update()
     const OIS::MouseState& lMouseState = mMouse->getMouseState();
     mMouseCursor.updatePosition(lMouseState.X.abs, lMouseState.Y.abs);
 
-    mSelectionHelper.update(lMouseState);
+    // depending on the internal state we should do different things
+    switch (mState) {
+    case InternalState::S_Normal:
+        mSelectionHelper.update(lMouseState);
+        break;
+
+    case InternalState::S_CreateZone:
+
+        break;
+
+    default:
+        ASSERT(false && "Invalid internal state");
+    }
+
 
     // update camera
     handleCameraInput();

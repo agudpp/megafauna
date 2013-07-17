@@ -45,6 +45,7 @@ Primitive::setAlpha(Ogre::Real alpha)
 
 PrimitiveDrawer::PrimitiveDrawer() :
     mSceneMngr(0)
+,   mLastColourCount(0)
 {
     Ogre::SceneManagerEnumerator::SceneManagerIterator it =
         Ogre::Root::getSingleton().getSceneManagerIterator();
@@ -248,6 +249,17 @@ PrimitiveDrawer::deletePrimitive(Primitive* primitive)
     mPrimitives.back()->id = primitive->id;
     mPrimitives[primitive->id] = mPrimitives.back();
     mPrimitives.pop_back();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+Ogre::ColourValue
+PrimitiveDrawer::getFreshColour(void)
+{
+    /*constexpr unsigned int stepSize = 5;
+    constexpr unsigned int max = stepSize * stepSize * stepSize;
+
+    ++mLastColourCount;
+    unsigned int i = */
 }
 
 

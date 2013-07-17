@@ -38,6 +38,17 @@ namespace tool {
 class TriggerZone : public core::AppTester
 {
     static const Ogre::Real RANDOM_POSITION;
+
+    // define the internal states for this tool. This way it will be easy to
+    // handle the behaviour that should have (
+    // selecting and deleting zones     -> NormalState
+    // creating new zones               -> CreateZone
+    // ...
+    enum InternalState {
+        S_Normal = 0,
+        S_CreateZone,
+    };
+
 public:
     TriggerZone();
 
@@ -60,6 +71,12 @@ private:
     bool
     loadFloor(const TiXmlElement* xml);
 
+    // @brief Method used to create a zone using the first position and
+    //        the current one
+    //
+    void
+    createZone(void);
+
     // @brief Configure the camera to be used as Satellite mode
     //
     void
@@ -76,6 +93,10 @@ private:
     ui::MouseCursor mMouseCursor;
     SelectionHelper mSelectionHelper;
     core::AABB mFloorAABB;
+    InternalState mState;
+
+    // information needed for the state CreatingZone
+    Ogre::Vector3 mCZStartPos;
 };
 
 }

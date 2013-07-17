@@ -144,6 +144,12 @@ public:
     void
     deletePrimitive(Primitive* primitive);
 
+    // @brief This method is used to get a new fresh color (different from the
+    //        one obtained when calling this method the last time).
+    // @returns the new fresh colour
+    //
+    Ogre::ColourValue
+    getFreshColour(void);
 
 private:
     PrimitiveDrawer();
@@ -158,6 +164,7 @@ private:
     PrimitivePtrVec mPrimitives;
     Ogre::SceneManager* mSceneMngr;
     Ogre::MaterialPtr mBaseMat;
+    unsigned int mLastColourCount;
 };
 
 } /* namespace core */

@@ -149,7 +149,7 @@ SelectionHelper::update(const OIS::MouseState& mouseState)
                     select(newObjectRaycasted, SelectType::LeftButton);
                 }
             }
-            return 0;
+            return mLastRaycasted;
         }
 
         // the new raycasted object is a new one, trigger the event
