@@ -17,7 +17,6 @@
 #include <OgreSceneQuery.h>
 #include <OgreSceneManager.h>
 #include <OgreCamera.h>
-#include <OISMouse.h>
 
 #include <debug/DebugUtil.h>
 #include <cursor/MouseCursor.h>
@@ -107,13 +106,12 @@ public:
     //        logic (call the elements that are not being selected anymore, the
     //        elements who are being pointed by the mouse, etc). And we also
     //        return the new intersected object just in case is needed.
-    // @param mouseState    The mouse state to be used to get the buttons states
-    //                      (the position will be used from the MouseCursor)
     // @return the raycasted object (the closest one). or 0 if no object was
     //         found
+    // @note We will use input::Mouse to check for mouse press
     //
     SelectableObject*
-    update(const OIS::MouseState& mouseState);
+    update(void);
 
     // @brief Return the last raycasted object.
     //

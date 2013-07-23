@@ -1,3 +1,4 @@
+include(${DEV_ROOT_PATH}/io_interfaces/IO_InterfacesAll.cmake)
 set (HDRS ${HDRS}
 	${DEV_ROOT_PATH}/ui/cursor/MouseCursor.h
 	${DEV_ROOT_PATH}/tools/trigger_zone/TriggerZone.h

@@ -10,6 +10,7 @@
 #include <OgreUserObjectBindings.h>
 
 #include <types/basics.h>
+#include <input/InputMouse.h>
 
 namespace tool {
 
@@ -98,12 +99,12 @@ SelectionHelper::~SelectionHelper()
 
 ////////////////////////////////////////////////////////////////////////////////
 SelectableObject*
-SelectionHelper::update(const OIS::MouseState& mouseState)
+SelectionHelper::update(void)
 {
     // get the current position
     const Ogre::Vector2 currentPos(mMouseCursor.getXRelativePos(),
                                    mMouseCursor.getYRelativePos());
-    const bool leftButtonPressed = mouseState.buttonDown(OIS::MouseButtonID::MB_Left);
+    const bool leftButtonPressed = input::Mouse::isMouseDown(input::MouseButtonID::MB_Left);
 
     // check if we are in the same position (and assuming that nothing is
     // moving)

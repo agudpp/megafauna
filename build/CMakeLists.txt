@@ -135,6 +135,7 @@ include_directories( ${OIS_INCLUDE_DIRS}
 	${DEV_ROOT_PATH}/megafauna
 	${DEV_ROOT_PATH}/tools
 	${DEV_ROOT_PATH}/ui
+	${DEV_ROOT_PATH}/io_interfaces
 )
 
 # Include all the other specific files

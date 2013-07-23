@@ -23,6 +23,7 @@
 #include <cursor/MouseCursor.h>
 #include <utils/SelectionHelper.h>
 #include <math/AABB.h>
+#include <input/InputHelper.h>
 
 
 #define TRIGGER_ZONE_TOOL_FILE  "TriggerZone.xml"
@@ -92,6 +93,7 @@ private:
     SatelliteCamera mSatelliteCamera;
     ui::MouseCursor mMouseCursor;
     SelectionHelper mSelectionHelper;
+    input::InputHelper mInputHelper;
     core::AABB mFloorAABB;
     InternalState mState;
 

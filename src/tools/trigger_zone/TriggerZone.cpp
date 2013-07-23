@@ -22,8 +22,55 @@
 #include <xml/XMLHelper.h>
 #include <tinyxml/tinyxml.h>
 #include <trigger_system/TriggerZone.h>
+#include <input/InputMouse.h>
+#include <input/InputKeyboard.h>
 
 #include "TZone.h"
+
+
+
+// helper stuff
+//
+namespace {
+
+// Construct the mouse input keys we will use
+//
+static std::vector<input::MouseButtonID>
+getMouseButtons(void)
+{
+    std::vector<input::MouseButtonID> buttons;
+    buttons.reserve(10); // just in case :p
+
+    buttons.push_back(input::MouseButtonID::MB_Left);
+    buttons.push_back(input::MouseButtonID::MB_Right);
+
+    return buttons;
+}
+
+
+// Construct the keyboard keys we will use
+//
+static std::vector<input::KeyCode>
+getKeyboardKeys(void)
+{
+    std::vector<input::KeyCode> buttons;
+    buttons.reserve(10); // just in case :p
+
+    buttons.push_back(input::KeyCode::KC_ESCAPE);
+    buttons.push_back(input::KeyCode::KC_A);
+    buttons.push_back(input::KeyCode::KC_S);
+    buttons.push_back(input::KeyCode::KC_D);
+    buttons.push_back(input::KeyCode::KC_W);
+    buttons.push_back(input::KeyCode::KC_LEFT);
+    buttons.push_back(input::KeyCode::KC_DOWN);
+    buttons.push_back(input::KeyCode::KC_RIGHT);
+    buttons.push_back(input::KeyCode::KC_UP);
+
+    return buttons;
+}
+
+}
+
 
 namespace tool {
 
@@ -127,25 +174,25 @@ TriggerZone::handleCameraInput()
     // without using translation, this is because we want to move always
     // in the same axis whatever be the direction of the camera.
 
-
-    // MOUSE
-    const OIS::MouseState& lMouseState = mMouse->getMouseState();
-
-    if(mKeyboard->isKeyDown(OIS::KC_LEFT) || mKeyboard->isKeyDown(OIS::KC_A)) {
+    if(mInputHelper.isKeyPressed(input::KeyCode::KC_LEFT) ||
+            mInputHelper.isKeyPressed(input::KeyCode::KC_A)) {
         mTranslationVec.x += 1.0f;
     }
-    if(mKeyboard->isKeyDown(OIS::KC_RIGHT) || mKeyboard->isKeyDown(OIS::KC_D)) {
+    if(mInputHelper.isKeyPressed(input::KeyCode::KC_RIGHT) ||
+            mInputHelper.isKeyPressed(input::KeyCode::KC_D)) {
         mTranslationVec.x -= 1.0f;
     }
 
-    if(mKeyboard->isKeyDown(OIS::KC_UP) || mKeyboard->isKeyDown(OIS::KC_W)) {
+    if(mInputHelper.isKeyPressed(input::KeyCode::KC_UP) ||
+            mInputHelper.isKeyPressed(input::KeyCode::KC_W)) {
         mTranslationVec.z += 1.0f;
     }
-    if(mKeyboard->isKeyDown(OIS::KC_DOWN) || mKeyboard->isKeyDown(OIS::KC_S)) {
+    if(mInputHelper.isKeyPressed(input::KeyCode::KC_DOWN) ||
+            mInputHelper.isKeyPressed(input::KeyCode::KC_S)) {
         mTranslationVec.z -= 1.0f;
     }
 
-    const float lMouseZ = float(lMouseState.Z.rel);
+    const float lMouseZ = float(input::Mouse::relZ());
     if (lMouseZ > 0.0f) {
         mTranslationVec.y += 10.f;
     } else if (lMouseZ < 0.0f) {
@@ -164,8 +211,14 @@ TriggerZone::TriggerZone() :
     core::AppTester(mTimeFrame)
 ,   mSatelliteCamera(mCamera, mSceneMgr, mTimeFrame)
 ,   mSelectionHelper(*mSceneMgr, *mCamera, mMouseCursor)
+,   mInputHelper(getMouseButtons(), getKeyboardKeys())
 ,   mState(InternalState::S_Normal)
+
 {
+    // configure the input
+    input::Mouse::setMouse(mMouse);
+    input::Keyboard::setKeyboard(mKeyboard);
+
     setUseDefaultInput(false);
     mMouseCursor.setCursor(ui::MouseCursor::Cursor::NORMAL_CURSOR);
     mMouseCursor.setVisible(true);
@@ -211,19 +264,22 @@ TriggerZone::loadAditionalData(void)
 void
 TriggerZone::update()
 {
-    if (mKeyboard->isKeyDown(OIS::KC_ESCAPE)) {
+    // update the input system
+    mInputHelper.update();
+
+    if (mInputHelper.isKeyPressed(input::KeyCode::KC_ESCAPE)) {
         // we have to exit
         mStopRunning = true;
+        return;
     }
 
     // update mouse cursor
-    const OIS::MouseState& lMouseState = mMouse->getMouseState();
-    mMouseCursor.updatePosition(lMouseState.X.abs, lMouseState.Y.abs);
+    mMouseCursor.updatePosition(input::Mouse::absX(), input::Mouse::absY());
 
     // depending on the internal state we should do different things
     switch (mState) {
     case InternalState::S_Normal:
-        mSelectionHelper.update(lMouseState);
+        mSelectionHelper.update();
         break;
 
     case InternalState::S_CreateZone:
