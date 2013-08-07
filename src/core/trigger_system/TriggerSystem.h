@@ -54,10 +54,11 @@ public:
     inline TriggerAgent*
     getAgent(core::uint16_t id);
 
-    // @brief Initialize the agent in a certaion position. We will find
+    // @brief Initialize the agent in a certain position. We will find
     //        all the zones that intersects with the agent and we will start there.
-    //        Call this method before start moving the agent
-    // @param agent     The agent we want to initializate
+    //        Call this method before start moving the agent and after the
+    //        system was built
+    // @param agent     The agent we want to initialize
     // @param position  The initial position of the agent
     //
     TriggerCode
