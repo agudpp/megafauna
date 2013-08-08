@@ -124,6 +124,26 @@ struct AABB
         }
     }
 
+    // @brief Increase the size of the current bounding box to contain a vector
+    // @param vec   The vector we want to contain
+    //
+    inline void
+    increaseToContain(const Vector2& vec)
+    {
+        if (tl.x > vec.x) {
+            tl.x = vec.x;
+        }
+        if (br.x < vec.x) {
+            br.x = vec.x;
+        }
+        if (tl.y < vec.y) {
+            tl.y = vec.y;
+        }
+        if (br.y > vec.y) {
+            br.y = vec.y;
+        }
+    }
+
     // For debugging printing
     inline friend std::ostream& operator<<(std::ostream& o, const AABB& aabb)
     {

@@ -8,6 +8,7 @@
 #include "OgreUtil.h"
 
 #include <OgreSubMesh.h>
+#include <OgreMesh.h>
 
 #include <debug/DebugUtil.h>
 

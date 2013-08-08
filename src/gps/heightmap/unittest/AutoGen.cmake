@@ -1,4 +1,5 @@
 include(${DEV_ROOT_PATH}/gps/heightmap/AutoGen.cmake)
+include(${DEV_ROOT_PATH}/core/ogre_utils/AutoGen.cmake)
 
 # Define global sources here
 set(SRCS ${SRCS}

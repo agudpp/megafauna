@@ -52,10 +52,8 @@ private:
     // @return true on success | false otherwise
     //
     bool
-    loadFloor(const TiXmlElement* xml);
+    loadFloor();
 
-    void
-    handleCameraInput(void);
     void
     handlePlayerInput(void);
 

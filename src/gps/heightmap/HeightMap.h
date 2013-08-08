@@ -271,24 +271,7 @@ HeightMap<VEC_TYPE>::getHeightAndNormal(const core::Vector2& pos, VEC_TYPE& norm
 
     normal.normalise();
     const float d = -(p0v.x * normal.x + p0v.y * normal.y + p0v.z * normal.z);
-    return (-normal.x * realPos.x
-                    -normal.y * realPos.y
-                    - d) / normal.z;
-
-
-    // calculate the projected point
-    // The projection of a point q = (x, y, z) onto a plane given by a point
-    // p = (a, b, c) and a normal n = (d, e, f) is
-    // q_proj = q - dot(q - p, n) * n
-    // assuming n is a unit vector.
-    //
-    /*VEC_TYPE projP(realPos.x, realPos.y, p3v.z);
-    VEC_TYPE aux = projP - p0v;
-    const float dotProd = aux.x * normal.x + aux.y * normal.y + aux.z * normal.z;
-    normal.normalise(); // TODO: check if we can avoid this!
-    projP = projP - dotProd * normal;
-
-    return projP.z;*/
+    return (-normal.x * realPos.x - normal.y * realPos.y - d) / normal.z;
 }
 
 

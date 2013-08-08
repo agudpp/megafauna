@@ -168,7 +168,18 @@ PrimitiveDrawer::createSphere(const Ogre::Vector3& center,
                               Ogre::Real radius,
                               const Ogre::ColourValue& color)
 {
-    ASSERT(false); return 0;
+
+    Ogre::Entity* ent = mSceneMngr->createEntity(Ogre::SceneManager::PrefabType::PT_SPHERE);
+    Ogre::SceneNode* node = mSceneMngr->getRootSceneNode()->createChildSceneNode();
+
+    node->attachObject(ent);
+    node->setPosition(center);
+
+    PrimitivePtr sphere(new Primitive(node, ent));
+
+    debugERROR("We are not setting the radius of the sphere here... fix this\n");
+
+    return sphere.get();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
