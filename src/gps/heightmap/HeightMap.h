@@ -54,6 +54,27 @@ public:
           unsigned int rows,
           const std::vector<float>& data);
 
+    // @brief Returns the current AABB.
+    // @returns the bounding box used by this HeightMap
+    //
+    inline const core::AABB&
+    aabb(void) const;
+
+    // @brief Get the number of rows / columns of the current HeightMap
+    // @returns Number of rows | number of columns
+    //
+    inline unsigned int
+    numOfRows(void) const;
+    inline unsigned int
+    numOfColumns(void) const;
+
+    // @brief Get the current data and the size of the data.
+    // @param size      The size of the data (to be filled)
+    // @return the pointer to the data vector of size size
+    //
+    inline const float*
+    data(unsigned int& size) const;
+
     // @brief Check if a position is inside the area of the height map
     // @param pos       The position
     // @returns true if it is | false otherwise
@@ -89,6 +110,14 @@ public:
     //
     inline float
     getHeightAndNormal(const core::Vector2& pos, VEC_TYPE& normal) const;
+
+    // @brief Compare operator useful to check two HeightMaps if they are equal
+    // @param other     The other heightmap we want to check against this one
+    // @returns true if they are equal | false otherwise
+    //
+    inline bool
+    operator==(const HeightMap<VEC_TYPE>& other) const;
+
 
 private:
     // avoid copy
@@ -174,6 +203,35 @@ HeightMap<VEC_TYPE>::build(const core::AABB& bb,
     mCellSizeY = 1.f / mInvFactorY;
 
     return true;
+}
+
+template <typename VEC_TYPE>
+inline const core::AABB&
+HeightMap<VEC_TYPE>::aabb(void) const
+{
+    return mBB;
+}
+
+template <typename VEC_TYPE>
+inline unsigned int
+HeightMap<VEC_TYPE>::numOfRows(void) const
+{
+    return mNumRows - 1;
+}
+template <typename VEC_TYPE>
+inline unsigned int
+HeightMap<VEC_TYPE>::numOfColumns(void) const
+{
+    return mNumColumns - 1;
+}
+
+template <typename VEC_TYPE>
+inline const float*
+HeightMap<VEC_TYPE>::data(unsigned int& size) const
+{
+    size = (mNumColumns) * (mNumRows); // not that numRows = real_numRows+1
+                                       // and numColumns = real_numColumns+1
+    return mData;
 }
 
 template <typename VEC_TYPE>
@@ -269,9 +327,29 @@ HeightMap<VEC_TYPE>::getHeightAndNormal(const core::Vector2& pos, VEC_TYPE& norm
     normal.y = a.z * b.x - a.x * b.z,
     normal.z = a.x * b.y - a.y * b.x;
 
-    normal.normalise();
+    // normalize the vector using the fast sqrt algorithm
+    normal *= core::InvSqrt(normal.x * normal.x +
+                            normal.y * normal.y +
+                            normal.z * normal.z);
     const float d = -(p0v.x * normal.x + p0v.y * normal.y + p0v.z * normal.z);
     return (-normal.x * realPos.x - normal.y * realPos.y - d) / normal.z;
+}
+
+template <typename VEC_TYPE>
+inline bool
+HeightMap<VEC_TYPE>::operator==(const HeightMap<VEC_TYPE>& other) const
+{
+    if (other.mBB != mBB || other.mNumColumns != mNumColumns ||
+        other.mNumRows != mNumRows || other.mSize != mSize) {
+        return false;
+    }
+    for (unsigned int i = 0; i < mSize; ++i) {
+        if (other.mData[i] != mData[i]) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 

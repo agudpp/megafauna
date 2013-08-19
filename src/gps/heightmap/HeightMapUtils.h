@@ -8,6 +8,7 @@
 #ifndef HEIGHTMAPUTILS_H_
 #define HEIGHTMAPUTILS_H_
 
+#include <string>
 
 #include <OgreVector3.h>
 
@@ -37,6 +38,23 @@ namespace HeightMapUtils {
 //
 bool
 configureFromMesh(const Ogre::Mesh* mesh, HeightMap<Ogre::Vector3>& hm);
+
+// @brief Export a current built HeightMap into a file (binary file).
+// @param hm            The heightMap we want to export.
+// @param fileName      The output file name.
+// @return true on success | false otherwise
+//
+bool
+exportToFile(const HeightMap<Ogre::Vector3>& hm, const std::string& fileName);
+
+// @brief Import a HeightMap from a binary file. We will construct the hm from
+//        the contents of a file.
+// @param fileName      The file name (path) to be read.
+// @param hm            The HeightMap to be built.
+// @return true on success | false otherwise
+//
+bool
+importFromFile(const std::string& fileName, HeightMap<Ogre::Vector3>& hm);
 
 
 } /* namespace HeightMapUtils */

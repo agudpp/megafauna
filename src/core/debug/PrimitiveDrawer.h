@@ -138,6 +138,16 @@ public:
     createMultiline(const std::vector<Ogre::Vector3>& points,
                     const Ogre::ColourValue& color = Ogre::ColourValue::White);
 
+    // @brief Create an 3 axis where all of the lines should be pointing to the
+    //        positive values (R,0,0), (0,R,0), (0,0,R) where R is the size
+    //        of the lines and with colors:
+    //        X = red, Y = green, Z = blue,
+    // @param position  The position where we want to create the axis
+    // @param r         The lenght of the lines (optional)
+    //
+    Primitive*
+    create3DAxis(const Ogre::Vector3& position, Ogre::Real r = 15.0f);
+
     // @brief Delete or remove an allocated primitive
     // @param primitive The previously allocated primitive
     //

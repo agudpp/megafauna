@@ -246,6 +246,46 @@ PrimitiveDrawer::createMultiline(const std::vector<Ogre::Vector3>& points,
    return line.get();
 }
 
+////////////////////////////////////////////////////////////////////////////////
+Primitive*
+PrimitiveDrawer::create3DAxis(const Ogre::Vector3& position, Ogre::Real r)
+{
+    Ogre::ManualObject* manual = mSceneMngr->createManualObject(OgreNameGen::getFreshName());
+
+    // construct the manual one line
+    manual->begin("", Ogre::RenderOperation::OT_LINE_LIST);
+
+    // X axis
+    manual->position(position);
+    manual->colour(1.0f, 0, 0);
+    manual->position(position + Ogre::Vector3(r, 0, 0));
+    manual->position(position);
+
+    // Y axis
+    manual->colour(0, 1.0f, 0);
+    manual->position(position + Ogre::Vector3(0, r, 0));
+    manual->position(position);
+
+    // Z axis
+    manual->colour(0, 0, 1.0f);
+    manual->position(position + Ogre::Vector3(0, 0, r));
+
+    manual->end(); // and building the manual
+
+    manual->getSection(0)->getTechnique()->getPass(0)->setLightingEnabled(false);
+
+   // create the scene node
+   Ogre::SceneNode* node = mSceneMngr->getRootSceneNode()->createChildSceneNode();
+   node->attachObject(manual);
+
+   PrimitivePtr axis(new Primitive(node, manual));
+
+   axis->id = mPrimitives.size();
+   mPrimitives.push_back(axis);
+
+   return axis.get();
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 void

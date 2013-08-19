@@ -9,10 +9,14 @@
 #include <vector>
 
 #include <OgreVector3.h>
+#include <OgreMeshManager.h>
+#include <OgreMesh.h>
+#include <OgreResourceGroupManager.h>
 
 #include <UnitTest++/UnitTest++.h>
 
 #include <heightmap/HeightMap.h>
+#include <heightmap/HeightMapUtils.h>
 #include <math/FloatComp.h>
 
 using namespace core;
@@ -146,6 +150,55 @@ TEST(PendingSimplePlane)
     }
 }
 
+// TODO:
+TEST(ParseMesh)
+{
+    // TODO:
+    Ogre::MeshPtr mesh = Ogre::MeshManager::getSingleton().load("test.mesh",
+        Ogre::ResourceGroupManager::AUTODETECT_RESOURCE_GROUP_NAME);
+    CHECK(mesh.get() != 0);
+
+    HM hm;
+
+    // now parse the mesh and create the heightmap
+    CHECK_EQUAL(true, gps::HeightMapUtils::configureFromMesh(mesh.get(), hm));
+    CHECK_EQUAL(10, hm.numOfColumns());
+    CHECK_EQUAL(10, hm.numOfRows());
+
+    // check that the data is what we want
+    unsigned int size = 0;
+    const float* data = hm.data(size);
+    CHECK(data != 0);
+    CHECK_EQUAL((10+1)*(10+1), size);
+
+    core::AABB bb(100,0,0,100);
+    CHECK_EQUAL(bb, hm.aabb());
+
+    for (unsigned int i = 0; i < size; ++i) {
+        CHECK_EQUAL(123.f, data[i]);
+    }
+}
+
+TEST(ImporterExporter)
+{
+    // we will test the importer exporter right here
+    HM hm;
+    VecF data;
+    data.resize(11*11);
+    for (unsigned int i = 0; i < data.size(); ++i) {
+        data[i] = 1234.f;
+    }
+
+    CHECK_EQUAL(true, hm.build(BB(100,0,0,100), 10, 10, data));
+    CHECK_EQUAL(true, gps::HeightMapUtils::exportToFile(hm, "test.hm"));
+
+    // import it
+    HM hmImported;
+    CHECK_EQUAL(true, gps::HeightMapUtils::importFromFile("test.hm", hmImported));
+
+    // check that both are equal
+    CHECK_EQUAL(hm, hmImported);
+}
 
 int
 main(void)

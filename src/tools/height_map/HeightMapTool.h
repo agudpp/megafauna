@@ -21,6 +21,7 @@
 #include <types/basics.h>
 #include <math/AABB.h>
 #include <input/InputHelper.h>
+#include <heightmap/HeightMap.h>
 
 
 // forward
@@ -54,14 +55,24 @@ private:
     bool
     loadFloor();
 
+    // @brief Create Player
+    //
     void
-    handlePlayerInput(void);
+    createPlayer(void);
+
+    void
+    handlePlayer(void);
+    void
+    handleCameraInput(void);
 
 
 private:
     float mTimeFrame;
     core::OgreText mPlayerPos;
     input::InputHelper mInputHelper;
+    Ogre::SceneNode* mPlayer;
+    Ogre::Real mPlayerHalfHeight;
+    gps::HeightMap<Ogre::Vector3> mHeightMap;
 
 };
 

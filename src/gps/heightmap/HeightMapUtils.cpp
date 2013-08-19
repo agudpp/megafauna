@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <fstream>
 
 #include <OgreMesh.h>
 #include <OgreString.h>
@@ -27,6 +28,15 @@ namespace {
 // Some typedefs
 //
 typedef std::vector<Ogre::Vector3> VecV3;
+
+// Some useful structures
+//
+struct HeightMapInfo {
+    unsigned int numRows;
+    unsigned int numColumns;
+    unsigned int size;
+    core::AABB bb;
+};
 
 // @brief Method used to calculate the BB of a list of Ogre vertices only
 //        in the x and y coordinates (not Z).
@@ -163,9 +173,14 @@ sortAndCheckMatrix(const std::vector<VecV3>& matrix,
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+
 namespace gps {
 namespace HeightMapUtils {
 
+////////////////////////////////////////////////////////////////////////////////
 bool
 configureFromMesh(const Ogre::Mesh* mesh, HeightMap<Ogre::Vector3>& hm)
 {
@@ -187,9 +202,7 @@ configureFromMesh(const Ogre::Mesh* mesh, HeightMap<Ogre::Vector3>& hm)
     vertices.resize(vCount);
 
     // now that we have the vertices we can remove the duplicated items
-    debugGREEN("before: %d\n", vertices.size());
     removeDuplicated(vertices);
-    debugGREEN("after: %d\n", vertices.size());
 
     // the indices doesn't matters, calculate the bounding box
     const core::AABB bb = getBoundingBox(vertices);
@@ -261,6 +274,76 @@ configureFromMesh(const Ogre::Mesh* mesh, HeightMap<Ogre::Vector3>& hm)
 
     // configure the hm
     return hm.build(bb, numColumns-1, numRows-1, data);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool
+exportToFile(const HeightMap<Ogre::Vector3>& hm, const std::string& fileName)
+{
+    // we will save all the information in a binary way.
+    HeightMapInfo info;
+
+    const float* data = 0;
+
+    info.numRows = hm.numOfRows();
+    info.numColumns = hm.numOfColumns();
+    info.bb = hm.aabb();
+    data = hm.data(info.size);
+
+    if (data == 0 || info.size == 0u) {
+        debugERROR("No data available in the HeightMap to be exported\n");
+        return false;
+    }
+
+    // open the file and save the data
+    std::fstream file(fileName.c_str(), std::fstream::out | std::fstream::binary);
+
+    if (!file.is_open()) {
+        debugERROR("We couldn't open the file %s\n", fileName.c_str());
+        return false;
+    }
+
+    // write info / header and data
+    file.write(reinterpret_cast<const char*>(&info), sizeof(HeightMapInfo));
+    file.write(reinterpret_cast<const char*>(data), info.size * sizeof(float));
+    file.close();
+
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool
+importFromFile(const std::string& fileName, HeightMap<Ogre::Vector3>& hm)
+{
+    // we need to do the inverse operation that export
+    std::fstream file(fileName.c_str(), std::fstream::in | std::fstream::binary);
+
+    if (!file.is_open()) {
+        debugERROR("We couldn't open the file %s\n", fileName.c_str());
+        return false;
+    }
+
+    HeightMapInfo info;
+    // read the info / header first
+    file.read(reinterpret_cast<char*>(&info), sizeof(HeightMapInfo));
+
+    if (!file.good()) {
+        debugERROR("Error reading header information of file %s\n", fileName.c_str());
+        return false;
+    }
+
+    if (info.size != ((info.numRows+1) * (info.numColumns+1))) {
+        debugERROR("Invalid readed data, size is different from "
+            "(numRows+1)*(numColumns+1): %u, %u, %u\n",
+            info.size, info.numRows, info.numColumns);
+        return false;
+    }
+    std::vector<float> data;
+    data.resize(info.size);
+    file.read(reinterpret_cast<char*>(&(data[0])), info.size * sizeof(float));
+
+    // build the hm
+    return hm.build(info.bb, info.numColumns, info.numRows, data);
 }
 
 } /* namespace HeightMapUtils */

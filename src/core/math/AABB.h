@@ -151,6 +151,20 @@ struct AABB
         return o;
     }
 
+
+    // @brief compare operators
+    //
+    inline bool
+    operator ==(const AABB& o) const
+    {
+        return tl == o.tl && br == o.br;
+    }
+    inline bool
+    operator !=(const AABB& o) const
+    {
+        return !(*this == o);
+    }
+
 };
 
 typedef AABB AlignedBox;

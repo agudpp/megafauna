@@ -12,8 +12,13 @@
 #include <iostream>
 #include <cmath>
 
+// Define the unit of conversions from degress to radians
+#define DEG_TO_RAD_FAC  0.0174532925f /* PI / 180 */
+
+namespace core {
+
 //http://www.lomont.org/Math/Papers/2003/InvSqrt.pdf
-static inline float
+inline float
 InvSqrt(float x)
 {
     const float xhalf = 0.5f * x;
@@ -24,10 +29,6 @@ InvSqrt(float x)
     return x;
 }
 
-// Define the unit of conversions from degress to radians
-#define DEG_TO_RAD_FAC  0.0174532925f /* PI / 180 */
-
-namespace core {
 
 // define a vector2
 //
