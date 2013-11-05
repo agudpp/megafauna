@@ -8,12 +8,14 @@
 #ifndef CONTIGUOUSCONT_H_
 #define CONTIGUOUSCONT_H_
 
+#include <types/basics.h>
+
 namespace core {
 
 template <typename T>
 struct ContiguousContainer {
     T* data;
-    unsigned int size;
+    core::uint32_t size;
 
     inline const T&
     operator[](unsigned int i) const
