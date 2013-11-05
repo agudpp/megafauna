@@ -68,6 +68,7 @@ getKeyboardKeys(void)
     buttons.push_back(input::KeyCode::KC_DOWN);
     buttons.push_back(input::KeyCode::KC_RIGHT);
     buttons.push_back(input::KeyCode::KC_UP);
+    buttons.push_back(input::KeyCode::KC_RSHIFT);   // for construction
 
     return buttons;
 }
@@ -268,6 +269,45 @@ TriggerZone::handlePlayerInput()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+void
+TriggerZone::initNewState(InternalState newState)
+{
+    switch(newState) {
+    case InternalState::S_Normal:
+        // do nothing
+        break;
+    case InternalState::S_CreateZone:
+        // save the current mouse position
+        mSelectionHelper.getPlaneIntersection(Ogre::Vector2(mMouseCursor.getXRelativePos(),
+                                                            mMouseCursor.getYRelativePos()),
+                                              mCZStartPos);
+        break;
+    default:
+        ASSERT(false);
+    }
+
+    // update the new state
+    mState = newState;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void
+TriggerZone::uninitState(InternalState oldState)
+{
+    switch(oldState) {
+    case InternalState::S_Normal:
+        // do nothing
+        break;
+    case InternalState::S_CreateZone:
+        // do nothing
+        break;
+    default:
+        ASSERT(false);
+    }
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 TriggerZone::TriggerZone() :
     core::AppTester(mTimeFrame)
@@ -336,6 +376,37 @@ TriggerZone::update()
     // update mouse cursor
     mMouseCursor.updatePosition(input::Mouse::absX(), input::Mouse::absY());
 
+<<<<<<< HEAD
+    // depending on the internal state we should do different things
+    switch (mState) {
+    case InternalState::S_Normal:
+        // check if we are pressing the "creation button"
+        if (mInputHelper.isKeyPressed(input::KeyCode::KC_RSHIFT) &&
+                mInputHelper.isMousePressed(input::MouseButtonID::MB_Left)) {
+            // we should go to the S_CreateZone state
+            initNewState(InternalState::S_CreateZone);
+            return;
+        }
+        mSelectionHelper.update();
+        break;
+
+    case InternalState::S_CreateZone:
+        // check if we release the creation key
+        if (mInputHelper.isKeyReleased(input::KeyCode::KC_RSHIFT)) {
+            initNewState(InternalState::S_Normal);
+            return;
+        }
+
+        // check if
+        break;
+
+    default:
+        ASSERT(false && "Invalid internal state");
+    }
+
+
+=======
+>>>>>>> 827693a6734acdc8130e290243c10a8ba054b227
     // update camera
     handleCameraInput();
 

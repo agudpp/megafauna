@@ -79,6 +79,20 @@ private:
     handlePlayerInput(void);
 
 
+
+    // @brief Auxiliary method to initialize an state and change the internal
+    //        value
+    // @param newState  The new state to be set
+    //
+    void
+    initNewState(InternalState newState);
+
+    // @brief Uninitialize an internal state
+    // @param oldState  The satate we will uninitialize
+    //
+    void
+    uninitState(InternalState oldState);
+
 private:
     float mTimeFrame;
     core::OgreText mCameraPos;
