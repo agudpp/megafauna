@@ -165,7 +165,7 @@ AppTester::loadInitialConfig(bool showConfig)
     Ogre::Light* l = mSceneMgr->createLight("MainLight");
     //setup the light
     l->setType(Ogre::Light::LT_DIRECTIONAL);
-    l->setDirection(-0.5, -0.5, 0);
+    l->setDirection(-0.5, 0, -0.5);
 
     ////////////////////////////////////////////////////////////////////////////
     // creates OIS Input

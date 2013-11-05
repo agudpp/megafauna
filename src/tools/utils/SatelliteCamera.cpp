@@ -30,7 +30,7 @@ SatelliteCamera::SatelliteCamera(Ogre::Camera* camera,
     Ogre::SceneNode* rootNode = manager->getRootSceneNode();
     mCamNode = rootNode->createChildSceneNode();
     mCamNode->attachObject(mCamera);
-    mCamNode->lookAt(Ogre::Vector3(0, -10, 0), Ogre::Node::TransformSpace::TS_WORLD);
+    mCamNode->lookAt(Ogre::Vector3(0, 0, -10), Ogre::Node::TransformSpace::TS_WORLD);
 
     // configure the text
     mText.setPos(0.75f, 0.97f);

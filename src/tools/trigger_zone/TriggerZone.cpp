@@ -10,12 +10,16 @@
 #include <memory>
 #include <cmath>
 
+#include <boost/signals.hpp>
+#include <boost/bind.hpp>
+
 #include <OgreMath.h>
 #include <OgreAnimationState.h>
 #include <OgreResourceManager.h>
 #include <OgreFontManager.h>
 #include <OgreMeshManager.h>
 #include <OgreMaterialManager.h>
+#include <OgreStringConverter.h>
 
 #include <OIS/OISMouse.h>
 
@@ -24,8 +28,7 @@
 #include <trigger_system/TriggerZone.h>
 #include <input/InputMouse.h>
 #include <input/InputKeyboard.h>
-
-#include "TZone.h"
+#include <debug/PrimitiveDrawer.h>
 
 
 
@@ -70,13 +73,18 @@ getKeyboardKeys(void)
     return buttons;
 }
 
+// Create a string from a vector
+//
+Ogre::String
+toString(const Ogre::Vector3& pos)
+{
+    return Ogre::StringConverter::toString(pos);
+}
+
 }
 
 
 namespace tool {
-
-const Ogre::Real TriggerZone::RANDOM_POSITION = 2000.0f;
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -108,7 +116,7 @@ TriggerZone::loadFloor(const TiXmlElement* xml)
 
     // create the floor entity and node (we will leak here, is not important)
     Ogre::Plane plane;
-    plane.normal = Ogre::Vector3::UNIT_Y;
+    plane.normal = Ogre::Vector3::UNIT_Z;
     plane.d = 0;
 
     Ogre::MeshManager& mm = Ogre::MeshManager::getSingleton();
@@ -120,14 +128,15 @@ TriggerZone::loadFloor(const TiXmlElement* xml)
                    true,
                    1,
                    1, 1,
-                   Ogre::Vector3::UNIT_Z);
+                   Ogre::Vector3::UNIT_Y);
     Ogre::Entity* planeEnt = mSceneMgr->createEntity("triggerPlane", "triggerFloor");
     planeEnt->setMaterialName(matName);
     Ogre::SceneNode* planeNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
     planeNode->attachObject(planeEnt);
+//    planeNode->yaw(Ogre::Radian(Ogre::Math::PI));
 
     // move a little bit down to be able to show the zones above the floor
-    planeNode->translate(0, -5, 0);
+    planeNode->translate(0, 0, -5);
 
     mFloorAABB.tl.x = -sizeX * .5f;
     mFloorAABB.tl.y = sizeY * .5f;
@@ -139,25 +148,53 @@ TriggerZone::loadFloor(const TiXmlElement* xml)
 
 ////////////////////////////////////////////////////////////////////////////////
 void
-TriggerZone::createZone(void)
-{
-    ASSERT(false); // TODO
-}
-
-////////////////////////////////////////////////////////////////////////////////
-void
 TriggerZone::configureCamera(void)
 {
     // set the zone for where we will be moving on
     Ogre::AxisAlignedBox moveZone(mFloorAABB.tl.x,
-                                  50,
                                   mFloorAABB.br.y,
+                                  50,
                                   mFloorAABB.br.x,
-                                  std::max(mFloorAABB.getHeight(), mFloorAABB.getWidth()),
-                                  mFloorAABB.tl.y);
+                                  mFloorAABB.tl.y,
+                                  std::max(mFloorAABB.getHeight(), mFloorAABB.getWidth()));
     // configure the velocity taking into account the size of the level
     mSatelliteCamera.configure(moveZone, 10);
 
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void
+TriggerZone::configureTriggerSystem(void)
+{
+    // TODO: HARD-coded zones:
+    std::vector<core::TriggerZone> zones;
+
+    // TODO: remove this, is just for test
+    zones.push_back(core::TriggerZone(core::TZType(100,100, 0, 500)));
+    mTZones.push_back(TZone(zones.back(), core::PrimitiveDrawer::instance().getFreshColour()));
+    zones.push_back(core::TriggerZone(core::TZType(500, 400, 20, 800)));
+    mTZones.push_back(TZone(zones.back(), core::PrimitiveDrawer::instance().getFreshColour()));
+    zones.push_back(core::TriggerZone(core::TZType(1600, 1200, 1000, 2000)));
+    mTZones.push_back(TZone(zones.back(), core::PrimitiveDrawer::instance().getFreshColour()));
+
+    // create the zones
+    mTriggerSystem.build(zones, mIDs);
+
+    ASSERT(mIDs.size() == mTZones.size());
+
+    // create now the callbacks
+    for (core::size_t i = 0, size = mTZones.size(); i < size; ++i) {
+        mTZones[i].getConnection() = mTriggerSystem.addCallback(mIDs[i],
+            boost::bind(&TZone::eventHandler, &(mTZones[i]), _1));
+    }
+
+    // configure the agent
+   core::TriggerAgent* agent = mTriggerSystem.createAgent();
+   ASSERT(agent);
+   mTriggerSystem.initializeAgent(agent, core::Vector2(0,0));
+   mPlayer.initialize(agent, Ogre::Vector3(0,0,0));
+
+    debugGREEN("TriggerSystem configured..\n");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -175,33 +212,58 @@ TriggerZone::handleCameraInput()
     // without using translation, this is because we want to move always
     // in the same axis whatever be the direction of the camera.
 
-    if(mInputHelper.isKeyPressed(input::KeyCode::KC_LEFT) ||
-            mInputHelper.isKeyPressed(input::KeyCode::KC_A)) {
+    if(mInputHelper.isKeyPressed(input::KeyCode::KC_LEFT)) {
         mTranslationVec.x += 1.0f;
     }
-    if(mInputHelper.isKeyPressed(input::KeyCode::KC_RIGHT) ||
-            mInputHelper.isKeyPressed(input::KeyCode::KC_D)) {
+    if(mInputHelper.isKeyPressed(input::KeyCode::KC_RIGHT)) {
         mTranslationVec.x -= 1.0f;
     }
 
-    if(mInputHelper.isKeyPressed(input::KeyCode::KC_UP) ||
-            mInputHelper.isKeyPressed(input::KeyCode::KC_W)) {
-        mTranslationVec.z += 1.0f;
+    if(mInputHelper.isKeyPressed(input::KeyCode::KC_UP)) {
+        mTranslationVec.y -= 1.0f;
     }
-    if(mInputHelper.isKeyPressed(input::KeyCode::KC_DOWN) ||
-            mInputHelper.isKeyPressed(input::KeyCode::KC_S)) {
-        mTranslationVec.z -= 1.0f;
+    if(mInputHelper.isKeyPressed(input::KeyCode::KC_DOWN)) {
+        mTranslationVec.y += 1.0f;
     }
 
     const float lMouseZ = float(input::Mouse::relZ());
     if (lMouseZ > 0.0f) {
-        mTranslationVec.y += 10.f;
+        mTranslationVec.z += 10.f;
     } else if (lMouseZ < 0.0f) {
-        mTranslationVec.y -= 10.f;
+        mTranslationVec.z -= 10.f;
     }
 
     if(mTranslationVec != Ogre::Vector3::ZERO) {
         mSatelliteCamera.translate(mTranslationVec * (200.f * mGlobalTimeFrame));
+    }
+
+}
+////////////////////////////////////////////////////////////////////////////////
+void
+TriggerZone::handlePlayerInput()
+{
+    ///////////////////////////////////////////////////////////////////////////
+    // CAMERA
+    //  float lCoeff = 200.0f * Common::GlobalObjects::lastTimeFrame;
+    Ogre::Vector3 mTranslationVec = Ogre::Vector3::ZERO;
+
+    if(mInputHelper.isKeyPressed(input::KeyCode::KC_A)) {
+        mTranslationVec.x -= 1.0f;
+    }
+    if(mInputHelper.isKeyPressed(input::KeyCode::KC_D)) {
+        mTranslationVec.x += 1.0f;
+    }
+
+    if(mInputHelper.isKeyPressed(input::KeyCode::KC_W)) {
+        mTranslationVec.y += 1.0f;
+    }
+    if(mInputHelper.isKeyPressed(input::KeyCode::KC_S)) {
+        mTranslationVec.y -= 1.0f;
+    }
+
+    if(mTranslationVec != Ogre::Vector3::ZERO) {
+        mTranslationVec *= (200.f * mGlobalTimeFrame);
+        mPlayer.translate(mTranslationVec.x, mTranslationVec.y);
     }
 
 }
@@ -250,10 +312,8 @@ TriggerZone::uninitState(InternalState oldState)
 TriggerZone::TriggerZone() :
     core::AppTester(mTimeFrame)
 ,   mSatelliteCamera(mCamera, mSceneMgr, mTimeFrame)
-,   mSelectionHelper(*mSceneMgr, *mCamera, mMouseCursor)
 ,   mInputHelper(getMouseButtons(), getKeyboardKeys())
-,   mState(InternalState::S_Normal)
-
+,   mPlayer(mSceneMgr)
 {
     // configure the input
     input::Mouse::setMouse(mMouse);
@@ -263,6 +323,11 @@ TriggerZone::TriggerZone() :
     mMouseCursor.setCursor(ui::MouseCursor::Cursor::NORMAL_CURSOR);
     mMouseCursor.setVisible(true);
     mMouseCursor.setWindowDimensions(mWindow->getWidth(), mWindow->getHeight());
+
+    mCameraPos.setPos(0.f, 0.05f);
+    mCameraPos.setColor(0, 0, 1, 1.f);
+    mPlayerPos.setPos(0.f, 0.0f);
+    mPlayerPos.setColor(0, 0, 1, 1.f);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -290,14 +355,9 @@ TriggerZone::loadAditionalData(void)
     // configure the stallite camera
     configureCamera();
 
-
-    // TODO: remove this, is just for test
-    core::TriggerZone tz;
-    tz.setZone(core::TZType(100,100, 0, 500));
-    SelectableObject* zone = new TZone(tz, Ogre::ColourValue::Green);
-    tz.setZone(core::TZType(500, 400, 20, 800));
-    SelectableObject* zone2 = new TZone(tz, Ogre::ColourValue::Red);
-
+    // configure the TriggerSystem
+    configureTriggerSystem();
+    mPlayer.translate(2000, 1000);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -316,6 +376,7 @@ TriggerZone::update()
     // update mouse cursor
     mMouseCursor.updatePosition(input::Mouse::absX(), input::Mouse::absY());
 
+<<<<<<< HEAD
     // depending on the internal state we should do different things
     switch (mState) {
     case InternalState::S_Normal:
@@ -344,8 +405,17 @@ TriggerZone::update()
     }
 
 
+=======
+>>>>>>> 827693a6734acdc8130e290243c10a8ba054b227
     // update camera
     handleCameraInput();
+
+    // update player movement
+    handlePlayerInput();
+
+    // show the position of the player and the camera
+    mCameraPos.setText("Camera Position: " + toString(mSatelliteCamera.getWorldCamPos()), 0.023f);
+    mPlayerPos.setText("PlayerPosition: " + toString(mPlayer.position()), 0.023f);
 
 }
 

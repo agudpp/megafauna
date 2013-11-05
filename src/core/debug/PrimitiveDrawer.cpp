@@ -40,6 +40,9 @@ Primitive::setAlpha(Ogre::Real alpha)
 
     const Ogre::ColourValue& diffuse = mat->getTechnique(0)->getPass(0)->getDiffuse();
     mat->getTechnique(0)->getPass(0)->setDiffuse(diffuse.r, diffuse.g, diffuse.b, alpha);
+
+    const Ogre::ColourValue& specular = mat->getTechnique(0)->getPass(0)->getSpecular();
+    mat->getTechnique(0)->getPass(0)->setSpecular(specular.r, specular.g, specular.b, alpha);
 }
 
 
@@ -134,14 +137,14 @@ PrimitiveDrawer::createPlane(const Ogre::Vector3& center,
     // |         |
     // 0---------3
 
-    manual->position(-halfDims.x, 0, -halfDims.y);
-    manual->position(-halfDims.x, 0, halfDims.y);
-    manual->position(halfDims.x, 0, halfDims.y);
-    manual->position(halfDims.x, 0, -halfDims.y);
+    manual->position(-halfDims.x, -halfDims.y, 0);
+    manual->position(-halfDims.x, halfDims.y, 0);
+    manual->position(halfDims.x, halfDims.y, 0);
+    manual->position(halfDims.x, -halfDims.y, 0);
 
     // create triangles
-    manual->triangle(0, 1, 2);
-    manual->triangle(2, 3, 0);
+    manual->triangle(0, 2, 1);
+    manual->triangle(3, 2, 0);
 
     manual->end(); // and building the manual
 
@@ -255,11 +258,10 @@ PrimitiveDrawer::deletePrimitive(Primitive* primitive)
 Ogre::ColourValue
 PrimitiveDrawer::getFreshColour(void)
 {
-    /*constexpr unsigned int stepSize = 5;
-    constexpr unsigned int max = stepSize * stepSize * stepSize;
-
-    ++mLastColourCount;
-    unsigned int i = */
+    const float r = std::rand() % 256;
+    const float g = std::rand() % 256;
+    const float b = std::rand() % 256;
+    return Ogre::ColourValue(r/256.f, g/256.f, b/256.f);
 }
 
 

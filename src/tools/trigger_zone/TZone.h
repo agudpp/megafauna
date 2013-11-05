@@ -10,8 +10,9 @@
 
 #include <OgreColourValue.h>
 
+#include <debug/DebugUtil.h>
 #include <trigger_system/TriggerZone.h>
-#include <utils/SelectionHelper.h>
+#include <trigger_system/TriggerSystemDefines.h>
 
 
 // forward
@@ -22,7 +23,7 @@ struct Primitive;
 
 namespace tool {
 
-class TZone : public SelectableObject {
+class TZone {
 public:
     // Constructor / destructor
     //
@@ -38,35 +39,32 @@ public:
     ////////////////////////////////////////////////////////////////////////////
 
 
-    // @brief Method called when we pass the mouse over the object
+    // @brief Method called when the player get inside of this zone
     //
-    virtual void
-    mouseOver(void);
+    void
+    playerInside(void);
 
-    // @brief Method called when the mouse is out of the object
+    // @brief Method called when the player leaves the zone
     //
-    virtual void
-    mouseExit(void);
+    void
+    playerOutside(void);
 
-    // @brief Method called when the object is clicked (or selected)
-    // @param type  Determines the selection type (button of the mouse)
-    // @return true if the object should be selected or false if not. if we
-    //         return false the object will be not took into account as if was
-    //         selected (we will never call objectUnselected()). If we return true
-    //         we will track it as a selected object.
+    // @brief Return the associated connection
     //
-    virtual bool
-    objectSelected(SelectType type);
+    inline core::TriggerCallback::Connection&
+    getConnection(void);
 
-    // @brief Method called when the object is unselected
+    // @brief Method that will be called to receive the event associated to this
+    //        zone
     //
-    virtual void
-    objectUnselected(void);
+    inline void
+    eventHandler(const core::TriggerCallback::EventInfo&);
+
 
 private:
     core::TriggerZone mTriggerZone;
     core::Primitive* mPrimitive;
-    bool mSelected;
+    core::TriggerCallback::Connection mConnection;
 
 };
 
@@ -78,6 +76,23 @@ inline const core::TriggerZone&
 TZone::triggerZone(void) const
 {
     return mTriggerZone;
+}
+
+inline core::TriggerCallback::Connection&
+TZone::getConnection(void)
+{
+    return mConnection;
+}
+
+inline void
+TZone::eventHandler(const core::TriggerCallback::EventInfo& e)
+{
+    if (e.type == core::TriggerCallback::EventType::Entering) {
+        playerInside();
+    } else {
+        ASSERT(e.type == core::TriggerCallback::EventType::Leaving);
+        playerOutside();
+    }
 }
 
 }

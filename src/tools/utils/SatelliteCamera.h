@@ -80,7 +80,7 @@ inline const Ogre::Vector3&
 SatelliteCamera::getWorldCamPos(void) const
 {
     ASSERT(mCamera);
-    mCamera->getRealPosition();
+    return mCamera->getRealPosition();
 }
 }
 
