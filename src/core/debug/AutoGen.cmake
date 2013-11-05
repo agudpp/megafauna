@@ -3,6 +3,7 @@ set(HDRS ${HDRS}
 	${DEV_ROOT_PATH}/core/debug/DebugUtil.h
 	${DEV_ROOT_PATH}/core/debug/OgreNameGen.h	
 	${DEV_ROOT_PATH}/core/debug/OgreText.h
+	${DEV_ROOT_PATH}/core/debug/OgreTextTable.h
 	${DEV_ROOT_PATH}/core/debug/PrimitiveDrawer.h
 )
 

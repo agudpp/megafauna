@@ -35,7 +35,7 @@
 #define PLUGINS_CONF_FILE		"plugins.cfg"
 #define RESOURCES_CONF_FILE		"resources.cfg"
 
-#define RESOURCES_PATH	"MEGAFAUNA_RC_PATH"
+#define RESOURCES_PATH	"CZ01_RC_PATH"
 
 namespace core {
 

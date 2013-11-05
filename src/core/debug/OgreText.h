@@ -80,6 +80,11 @@ public:
     {
         textArea->setColour(Ogre::ColourValue(R, G, B, I));
     }
+    void
+    setColor(const Ogre::ColourValue& color)
+    {
+        textArea->setColour(color);
+    }
 private:
     Ogre::OverlayManager *olm;
     Ogre::OverlayContainer *panel;

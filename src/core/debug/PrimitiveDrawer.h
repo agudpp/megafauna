@@ -20,6 +20,8 @@
 #include <OgreMaterial.h>
 
 #include <types/basics.h>
+#include <math/Vec2.h>
+#include <math/AABB.h>
 
 #include "DebugUtil.h"
 
@@ -35,9 +37,9 @@ struct Primitive {
     } obj;
 
     Primitive(Ogre::SceneNode* n = 0, Ogre::Entity* m = 0) :
-        node(n), isManual(false) {obj.ent = m;}
+        node(n), isManual(false) {obj.ent = m; obj.ent->setQueryFlags(0);}
     Primitive(Ogre::SceneNode* n = 0, Ogre::ManualObject* m = 0) :
-        node(n), isManual(true) {obj.manual = m;}
+        node(n), isManual(true) {obj.manual = m; obj.manual->setQueryFlags(0);}
 
     Ogre::SceneNode *node;
 
@@ -49,6 +51,12 @@ struct Primitive {
     {
         ASSERT(node);
         node->setVisible(visible);
+    }
+    inline void
+    flipVisibility()
+    {
+        ASSERT(node);
+        return node->flipVisibility();
     }
 
     // @brief Set an specific color for this Primitive
@@ -62,6 +70,15 @@ struct Primitive {
     //
     void
     setAlpha(Ogre::Real alpha);
+
+    // @brief translate the primitive
+    // @param t     The translation vector
+    inline void
+    translate(const Ogre::Vector3& t)
+    {
+        ASSERT(node);
+        node->translate(t);
+    }
 
     // internal purposes
     unsigned int id;
@@ -88,11 +105,27 @@ public:
     // @param position  The center position of the box
     // @param sizes     The sizes of the box
     // @param color     The color to be used
+    // @param offset    Move each vertex the offset value (this way the box
+    //                  will not be centered).
     // @return the allocated Primitive* (DO NOT DELETE manually this memory)
     //
     Primitive*
     createBox(const Ogre::Vector3& center,
               const Ogre::Vector3& sizes,
+              const Ogre::Vector3& offset,
+              const Ogre::ColourValue& color = Ogre::ColourValue::White);
+    Primitive*
+    createBox(const Ogre::Vector3& center,
+              const Ogre::Vector3& sizes,
+              const Ogre::ColourValue& color = Ogre::ColourValue::White);
+
+    // @brief Create a new box2D object
+    // @param bb        The bounding box to draw
+    // @param color     The color to be used
+    // @return the allocated Primitive* (DO NOT DELETE manually this memory)
+    //
+    Primitive*
+    createBox(const core::AABB& bb,
               const Ogre::ColourValue& color = Ogre::ColourValue::White);
 
     // @brief Create a finite plane object (with normal pointing Y+)
@@ -147,6 +180,20 @@ public:
     //
     Primitive*
     create3DAxis(const Ogre::Vector3& position, Ogre::Real r = 15.0f);
+
+    // @brief Create an 3 axis where all of the lines should be pointing to the
+    //        positive values (R,0,0), (0,R,0), (0,0,R) where R is the size
+    //        of the lines and with colors:
+    //        X = red, Y = green, Z = blue,
+    //        We will rotate the axis using the associated orientation rot
+    // @param position  The position where we want to create the axis
+    // @param rot       The rotation / orientation of the axis
+    // @param r         The lenght of the lines (optional)
+    //
+    Primitive*
+    create3DAxis(const Ogre::Vector3& position,
+                 const Ogre::Quaternion& rot,
+                 Ogre::Real r = 15.0f);
 
     // @brief Delete or remove an allocated primitive
     // @param primitive The previously allocated primitive

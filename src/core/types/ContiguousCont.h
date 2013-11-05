@@ -8,15 +8,23 @@
 #ifndef CONTIGUOUSCONT_H_
 #define CONTIGUOUSCONT_H_
 
+#include <cstring>
+#include <stdlib.h>
+#include <cstdlib>
+
 #include <types/basics.h>
 
 namespace core {
 
 template <typename T>
 struct ContiguousContainer {
-    T* data;
     core::uint32_t size;
+    T* data;
 
+
+    // @brief Access to the i-th element
+    // @param i     The position in the container
+    //
     inline const T&
     operator[](unsigned int i) const
     {
@@ -28,7 +36,60 @@ struct ContiguousContainer {
         return data[i];
     }
 
+    // @brief Return the memory address to the beginning and the end (end is the
+    //        last element + 1 mem addr).
+    //
+    inline T*
+    begin(void)
+    {
+        return data;
+    }
+    inline const T*
+    begin(void) const
+    {
+        return data;
+    }
+    inline T*
+    end(void)
+    {
+        return data + size;
+    }
+    inline const T*
+    end(void) const
+    {
+        return data + size;
+    }
+
+    // @brief build the container from a memory addr
+    // @param addr      The memory address
+    //
+    inline void
+    setMemAddr(void* addr)
+    {
+        std::memcpy(&size, addr, sizeof(core::uint32_t));
+        data = addr + sizeof(core::uint32_t);
+    }
+
+    // @brief Free the current memory of this container using free() and reset
+    //        the size and data to 0.
+    //
+    inline void
+    freeMemory(void)
+    {
+        if (data != 0) {
+            free(data); size = 0; data = 0;
+        }
+    }
+
+    // empty constructor
     ContiguousContainer() : data(0), size(0){};
+
+    // build the container from a block of memory
+    //
+    ContiguousContainer(void* addr)
+    {
+        setMemAddr(addr);
+    }
 };
 
 
